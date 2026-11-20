@@ -4,11 +4,19 @@ Watchify is a watch marketplace prototype with the 6.4.0 design and Virtual Wris
 
 This release adds self-service Supabase test accounts, private saved workspaces, publication using seller-declared condition without AI, and a static Vercel build. Orders, conversations, payments, market analytics and inventory examples remain simulated product flows. They do not execute purchases, send messages to other people or charge money.
 
+## Hosted preview
+
+**Open the site: [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/).**
+
+Vercel reports the 6.4.2 deployment as **READY**. The public alias opened without a Vercel login, displayed version 6.4.2, and showed the Create account form with email, password and password-confirmation fields. External signup, confirmation-email delivery, sign-in, recovery and saved-workspace flows have not yet been verified end to end. SMTP/email delivery and Supabase Site URL/redirect configuration remain pending.
+
+The deployment uses the exact 141-file source tree `c05ddb4a985495cdbd87f7b30875c3862a4d7a7d`, published in GitHub commit [`daa26712e31d0ba36023052ec335906135621f10`](https://github.com/jheype/watchify/commit/daa26712e31d0ba36023052ec335906135621f10). It was created through Vercel's files deployment API in the owner-confirmed `jheypes-projects` team. Native team access is authorised. Vercel's GitHub integration is not installed, so GitHub commits do **not** currently trigger automatic deployments.
+
 ## What is connected
 
 | Area | Behaviour in the hosted test release |
 | --- | --- |
-| Sign-in | Email/password signup, confirmation, sign-in and password recovery through Supabase Auth. Each real account can use its own test workspace; no administrator allowlist is required. |
+| Sign-in | Email/password signup, confirmation, sign-in and recovery UI through Supabase Auth. The form is visible on the deployed site; external email delivery and account end-to-end flows remain unverified. The database no longer requires an administrator allowlist. |
 | Workspace | Each signed-in account can save and reopen its own changes, profile, favourites, sample orders, messages and listing drafts. |
 | Concurrent sessions | Version checks prevent one tab or device from silently replacing newer saved changes. The UI offers recovery and export when saving fails. |
 | Images | Images in a test workspace are private to its account; the complete workspace has an 8 MiB size limit. |
@@ -16,7 +24,7 @@ This release adds self-service Supabase test accounts, private saved workspaces,
 | Marketplace | Catalogue and commercial activity use sample records. This is not a shared live trading system. |
 | Virtual Wrist Fit | Available in watch listings, using the existing proportional illustration. |
 | Photo analysis / live pricing | Upload your own photos and choose Continue without AI to declare identity, condition, polishing history and asking price. Manual listings are marked Not AI verified. The optional local AI/pricing server is not deployed. |
-| Account security | Hosted accounts use real Supabase sign-in, confirmation and password recovery. The account page describes the available recovery flow. |
+| Account security | Supabase sign-in, confirmation and password recovery are implemented. Live delivery and recovery verification remain pending. |
 
 ## Run locally
 
@@ -36,7 +44,7 @@ Local mode does not automatically use the hosted Supabase workspace. Hosted mode
 1. Use the **Watchify** project (`iqfsalmepkcjawyukiie`) inside the **TripApp** Supabase organisation. The preview has its own database; it does not reuse the Trip project's data.
 2. Apply the SQL in `supabase/migrations` in order. Configure Auth redirect URLs and a working email provider for public signup confirmation and password recovery as described in the preview setup guide.
 3. Publish this source to the owner's `jheype/watchify` GitHub repository. Repository visibility does not replace authentication or database access controls.
-4. Import that repository into Vercel with the committed `vercel.json` settings.
+4. Deploy the exact source files through Vercel's API using the committed `vercel.json` settings. The current deployment uses this route. Repository import and automatic deployments require installation and connection of Vercel's GitHub integration.
 5. Set `WATCHIFY_SUPABASE_URL` and `WATCHIFY_SUPABASE_PUBLISHABLE_KEY` for the deployment. Both are public client configuration. Never substitute a service-role or secret key.
 6. Deploy, verify the sign-in and saved workspace on the final URL, then share that URL with the testers.
 
@@ -54,7 +62,7 @@ npm test
 npm run build
 ```
 
-The build requires the two public Supabase variables. See [the 6.4.2 release checks](docs/RELEASE-6.4.2-CHECKS.json) for current validation and remaining deployment/email-delivery requirements. Unit and integration tests use controlled test data and do not prove a real cloud project or deployment is connected. A release is ready for the team only after sign-in, saving, reload, account separation and access restrictions have been checked against the actual deployment.
+The build requires the two public Supabase variables. See [the 6.4.2 release checks](docs/RELEASE-6.4.2-CHECKS.json) for the confirmed deployment and remaining email-delivery, Auth-configuration and end-to-end checks. Unit and integration tests use controlled test data and do not prove a real cloud project or deployment is connected. A release is ready for the team only after sign-in, saving, reload, account separation and access restrictions have been checked against the actual deployment.
 
 ## Project structure
 

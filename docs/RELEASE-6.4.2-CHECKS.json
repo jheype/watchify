@@ -9,7 +9,7 @@
     "shared_marketplace": false,
     "live_payments_or_external_messages": false
   },
-  "verification_status": "Local application checks passed; deployment, email delivery and hosted end-to-end checks remain pending",
+  "verification_status": "Local application checks passed; Vercel READY and public alias/signup form inspected; email delivery, Auth redirect configuration and hosted account end-to-end checks remain pending",
   "external_state": {
     "github_repository": "https://github.com/jheype/watchify",
     "github_visibility": "public",
@@ -22,15 +22,36 @@
       "applied": true
     },
     "vercel_team": "jheypes-projects (team_55DgnVCODgAtDOB5NMApMhAk)",
-    "vercel_deployment": "Not deployed; native connection requires the owner-confirmed team access grant",
-    "trip": "Preserved; Watchify uses its own project"
+    "vercel_deployment": {
+      "id": "dpl_5uiGT6oerTYTnAkCSaajBei3Ca2h",
+      "status": "READY",
+      "build_completed_in_logs": true,
+      "canonical_url": "https://watchify-azure.vercel.app/",
+      "immutable_url": "https://watchify-qanl561bd-jheypes-projects.vercel.app/",
+      "aliases": [
+        "https://watchify-azure.vercel.app/",
+        "https://watchify-jheypes-projects.vercel.app/"
+      ],
+      "method": "Official Vercel upload_file and create_deployment files API",
+      "native_team_access_grant": "Authorised for owner-confirmed jheypes-projects",
+      "github_integration_installed": false,
+      "automatic_git_deployments_connected": false,
+      "github_source_commit": "daa26712e31d0ba36023052ec335906135621f10",
+      "local_source_commit": "7d27b780c92c8918ec3870d09ceb126192ac0d2c",
+      "source_tree": "c05ddb4a985495cdbd87f7b30875c3862a4d7a7d",
+      "source_files": 141,
+      "canonical_alias_requires_vercel_login": false,
+      "temporary_share_link_created": false
+    },
+    "trip": "Preserved; Watchify uses its own project",
+    "github_published_source_commit": "daa26712e31d0ba36023052ec335906135621f10"
   },
   "auth_configuration": {
     "public_email_signup_disabled": false,
     "email_confirmation_enabled": true,
     "anonymous_auth_enabled": false,
     "external_email_delivery": "Not configured by this change and not verified; public confirmation/recovery requires an email provider that supports external recipients",
-    "final_site_and_redirect_urls": "Pending final Vercel domain and Auth settings access",
+    "final_site_and_redirect_urls": "Canonical origin is https://watchify-azure.vercel.app/; Supabase Site URL and allowed redirect configuration/verification remain pending",
     "email_confirmation_disabled_as_workaround": false,
     "permanent_test_accounts_created": false,
     "emails_or_invitations_sent": false
@@ -55,14 +76,23 @@
     "result_file": "supabase/tests/public_account_validation_result.json"
   },
   "deployed_browser_validation": {
-    "status": "Not completed; no deployment exists",
+    "status": "Canonical public alias and signup form inspected; account and workspace end-to-end checks remain pending",
     "pending": [
+      "Configure and verify Supabase Site URL and allowed redirect URLs for the canonical origin",
       "External account signup and confirmation email delivery",
       "Sign-in and recovery on the deployed origin",
       "Manual listing publication with own photos and persistence after reload",
       "Account isolation on the deployed site",
-      "Unauthenticated data denial and excluded server paths"
-    ]
+      "Unauthenticated Supabase data denial"
+    ],
+    "url": "https://watchify-azure.vercel.app/",
+    "observed": [
+      "Canonical alias opened without a Vercel login",
+      "Version 6.4.2 visible",
+      "Create account opened email, password and password-confirmation fields"
+    ],
+    "signup_success_claimed": false,
+    "confirmation_email_delivery_verified": false
   },
   "references": [
     "https://supabase.com/docs/guides/auth/auth-smtp",
@@ -95,5 +125,43 @@
     "new_uploads": "Magic bytes, MIME, decode and 24 megapixel maximum",
     "restored_photos": "Decoded again before manual publication; corrupt or oversized media rejected",
     "concurrency": "Publication cancels when photo data, form declarations or the active account change during decoding"
+  },
+  "documentation_updated_at_utc": "2026-11-20T21:36:52Z",
+  "public_http_validation": {
+    "status": "passed",
+    "origin": "https://watchify-azure.vercel.app",
+    "cookies_sent": false,
+    "authorization_sent": false,
+    "supabase_runtime_project": "iqfsalmepkcjawyukiie",
+    "checks": [
+      {
+        "path": "/",
+        "status": 200,
+        "watchify_html": true,
+        "runtime_config": null,
+        "content_type": "text/html; charset=utf-8",
+        "no_index": "noindex, nofollow, noarchive"
+      },
+      {
+        "path": "/src/runtime-config.js",
+        "status": 200,
+        "watchify_html": false,
+        "runtime_config": true,
+        "content_type": "application/javascript; charset=utf-8",
+        "no_index": "noindex, nofollow, noarchive"
+      },
+      {
+        "path": "/server/start.cjs",
+        "status": 404
+      },
+      {
+        "path": "/.env",
+        "status": 404
+      },
+      {
+        "path": "/api/health",
+        "status": 404
+      }
+    ]
   }
 }

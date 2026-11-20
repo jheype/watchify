@@ -2,9 +2,24 @@
 
 The hosted preview publishes the existing Watchify frontend and uses Supabase for authenticated preview data. The local Node integration server remains a separate local development tool.
 
+## Published deployment
+
+- **Canonical public URL:** [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/)
+- Additional alias: [https://watchify-jheypes-projects.vercel.app/](https://watchify-jheypes-projects.vercel.app/)
+- Immutable deployment URL: [https://watchify-qanl561bd-jheypes-projects.vercel.app/](https://watchify-qanl561bd-jheypes-projects.vercel.app/)
+- Deployment ID: `dpl_5uiGT6oerTYTnAkCSaajBei3Ca2h`; Vercel status **READY**, with build completion confirmed in its logs.
+- Deployed GitHub source commit: [`daa26712e31d0ba36023052ec335906135621f10`](https://github.com/jheype/watchify/commit/daa26712e31d0ba36023052ec335906135621f10).
+- Deployed source tree: `c05ddb4a985495cdbd87f7b30875c3862a4d7a7d`, containing all 141 tracked source files. The static build publishes only its permitted frontend output.
+
+The canonical alias opened in a browser without requesting a Vercel login. Version 6.4.2 was visible, and Create account opened the email/password/password-confirmation form. This confirms site delivery and the form's presence, not successful account creation or email delivery. External signup, confirmation, sign-in, recovery and persistence still require live end-to-end verification.
+
+Independent HTTP requests without cookies or authorisation also returned `200` for `/` and `/src/runtime-config.js`; the runtime configuration points to the Watchify Supabase project. `/server/start.cjs`, `/.env` and `/api/health` returned `404`. Public responses included `X-Robots-Tag: noindex, nofollow, noarchive`.
+
+Native Vercel access to the owner-confirmed team is authorised. This deployment used file uploads and the official deployment API. Vercel's GitHub integration is not installed, and automatic deployments from repository commits are not connected. A later documentation-only GitHub commit does not change this deployed source tree.
+
 ## Hosting configuration
 
-Import the owner's `jheype/watchify` GitHub repository into the owner-confirmed Vercel team `jheypes-projects`. The committed `vercel.json` selects these settings:
+The deployed project is in the owner-confirmed Vercel team `jheypes-projects`. Redeploy through the files API, or install and connect Vercel's GitHub integration before using repository imports. The committed `vercel.json` selects these settings:
 
 | Setting | Value |
 | --- | --- |
@@ -38,9 +53,9 @@ Use the Watchify project (`iqfsalmepkcjawyukiie`) in the TripApp organisation. I
 
 The sign-in screen includes Create account, Resend confirmation and Forgot password. Keep email confirmation enabled and configure an email provider that can deliver confirmation and recovery messages to external recipients. Supabase's built-in sender is restricted to organisation members; a successful frontend build does not resolve that restriction. Follow `docs/SUPABASE_PREVIEW.md` for the current project state and email setup.
 
-Configure Auth's Site URL and allowed redirect URLs for the final HTTPS origin. The app supplies `origin + pathname` (normally `https://DEPLOYED-DOMAIN/`) as its callback URL. Add additional deployment origins only when they are actually needed for testing. PKCE links must be opened in the browser that requested them, using the newest link; the app explains this when requesting an email.
+Auth's Site URL and allowed redirect URLs still need configuration and verification for the canonical origin `https://watchify-azure.vercel.app/`. The app supplies `origin + pathname` (`https://watchify-azure.vercel.app/` on the canonical alias) as its callback URL. Add additional deployment origins only when they are actually needed for testing. PKCE links must be opened in the browser that requested them, using the newest link; the app explains this when requesting an email.
 
-Check Vercel's deployment protection settings before sharing the URL so that testers do not unexpectedly need access to the Vercel team. Repository visibility does not replace authentication or database access controls.
+Use the canonical alias for testing: it was opened successfully without a Vercel team login. Repository visibility does not replace authentication or database access controls.
 
 ## Scope of this preview
 
@@ -48,11 +63,11 @@ The existing catalogue and workflow examples remain available for product testin
 
 To test a listing without AI, upload your own supported watch photos, choose **Continue without AI**, then enter and confirm the watch identity, condition, polishing history and asking price. The final action is **Publish test listing**. The result is labelled **Seller-declared · Not AI verified** and is saved to that account's private workspace. Other accounts do not see these test listings. Saved manual drafts keep their valid progress, while the final publication consent is requested again after a reload.
 
-## Verification before sharing
+## Remaining end-to-end verification
 
-Run the existing checks and the static build with the public Supabase configuration set. Confirm that the generated directory contains only `index.html`, `robots.txt`, `src`, and `assets`. On the deployed URL, verify registration using an authorised external test address, email confirmation, sign-in, password recovery, sign-out, persistence after reload, separation between two accounts, manual listing publication and expected image rendering. Verify a denied unauthenticated data request. Confirm that `/server/start.cjs`, `/.env`, and `/api/health` do not expose local code or credentials.
+Run the existing checks and the static build with the public Supabase configuration set. Confirm that the generated directory contains only `index.html`, `robots.txt`, `src`, and `assets`. On the deployed URL, verify registration using an authorised external test address, email confirmation, sign-in, password recovery, sign-out, persistence after reload, separation between two accounts, manual listing publication and expected image rendering. Verify a denied unauthenticated data request. The public HTTP check already confirmed `404` for `/server/start.cjs`, `/.env` and `/api/health`; repeat these boundary checks after a later deployment.
 
-Record what was actually checked in `docs/RELEASE-6.4.2-CHECKS.json`. Do not describe the preview as ready for public account testing until Vercel reports the deployment ready and the deployed URL, external email delivery and Supabase connection have been tested.
+Record what was actually checked in `docs/RELEASE-6.4.2-CHECKS.json`. Vercel READY status, build completion and the public signup form have been observed. Public account testing still depends on the pending external email delivery, Auth URL settings and deployed account/workspace checks. The 24-group hosted SQL test run remains incomplete because no execution result was returned; do not report it as passing.
 
 ## References
 

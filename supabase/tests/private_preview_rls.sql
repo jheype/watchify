@@ -1,3 +1,6 @@
+-- HISTORICAL BASELINE: this test targets the first two migrations, before
+-- allow_public_authenticated_workspaces. The current access model is tested by
+-- public_account_rls.sql; the old non-member/revocation assertions no longer apply.
 -- Run with the project administrator SQL connection, never with a browser key.
 -- Every fixture is synthetic and rolled back. No passwords, sessions or emails
 -- are created or sent. This validates database roles/RLS, not the Auth HTTP flow.

@@ -84,6 +84,81 @@ test('capture takes a consistent copy before asynchronous photo conversion', asy
   assert.equal(saved.state.member.profile.nickname, 'Joao Almeida');
 });
 
+function manualState() {
+  const state = makeState();
+  Object.assign(state.sell, {
+    liveMode: true, assessmentMode: 'manual', sample: false, step: 5,
+    identity: { brand: 'Rolex', model: 'Datejust', reference: '126300' }, identityConfirmed: true,
+    condition: 'Very good', polishing: 'unknown', wearHistory: 'worn', visibleWear: 'minor',
+    conditionConfirmed: true, listingConfirmed: true, askingPrice: 6500,
+    photos: [{ url: 'data:image/jpeg;base64,/9j/4AECAw==', name: 'my-watch.jpg', role: 'Front & dial' }]
+  });
+  state.sellDraft = true;
+  return state;
+}
+
+test('manual drafts resume with their validated details and require fresh publication confirmation', async () => {
+  const state = manualState();
+  state.sell.analysis = { id: 'old-session-assessment' };
+  state.sell.quote = { price: 9999 };
+  const restored = snapshot.restore({}, await snapshot.capture(state));
+  assert.equal(restored.sell.step, 5);
+  assert.deepEqual(restored.sell.identity, state.sell.identity);
+  assert.equal(restored.sell.identityConfirmed, true);
+  assert.equal(restored.sell.conditionConfirmed, true);
+  assert.equal(restored.sell.listingConfirmed, false);
+  assert.equal(restored.sell.askingPrice, 6500);
+  assert.equal(restored.sell.analysis, undefined);
+  assert.equal(restored.sell.quote, undefined);
+  assert.equal(restored.sell.photos[0].file.name, 'my-watch.jpg');
+});
+
+test('restored photo filenames match the actual saved MIME type for manual publishing', async () => {
+  const state = manualState();
+  state.sell.photos[0].name = 'original-photo.png';
+  const restored = snapshot.restore({}, await snapshot.capture(state));
+  const photo = restored.sell.photos[0];
+  assert.equal(photo.name, 'original-photo.jpg');
+  assert.equal(photo.file.type, 'image/jpeg');
+  assert.equal(require('../src/domain.js').validatePhoto(photo.file), null);
+  assert.equal(restored.sell.step, 5);
+});
+
+test('manual draft recovery returns to the first incomplete declaration without losing user input', async () => {
+  const cases = [
+    { edit: state => { state.sell.photos = []; }, step: 1, identity: false, condition: false },
+    { edit: state => { state.sell.photos[0].url = 'assets/watches/santos.webp'; }, step: 1, identity: false, condition: false },
+    { edit: state => { state.sell.identity.reference = '  '; }, step: 2, identity: false, condition: false },
+    { edit: state => { state.sell.identityConfirmed = false; }, step: 2, identity: false, condition: false },
+    { edit: state => { state.sell.condition = 'Unworn'; }, step: 3, identity: true, condition: false },
+    { edit: state => { state.sell.conditionConfirmed = false; }, step: 3, identity: true, condition: false },
+    { edit: state => { state.sell.askingPrice = null; }, step: 4, identity: true, condition: true }
+  ];
+  for (const fixture of cases) {
+    const state = manualState(); fixture.edit(state);
+    const restored = snapshot.restore({}, await snapshot.capture(state));
+    assert.equal(restored.sell.step, fixture.step);
+    assert.equal(restored.sell.identityConfirmed, fixture.identity);
+    assert.equal(restored.sell.conditionConfirmed, fixture.condition);
+    assert.equal(restored.sell.listingConfirmed, false);
+    assert.equal(restored.sell.identity.brand, 'Rolex');
+  }
+});
+
+test('AI drafts still require new local evidence after reload and unknown modes fail closed', async () => {
+  const state = manualState(); state.sell.assessmentMode = 'ai';
+  const saved = await snapshot.capture(state);
+  const restored = snapshot.restore({}, saved);
+  assert.equal(restored.sell.step, 1);
+  assert.equal(restored.sell.identityConfirmed, false);
+  assert.equal(restored.sell.conditionConfirmed, false);
+  assert.equal(restored.sell.listingConfirmed, false);
+  saved.state.sell.assessmentMode = 'verified';
+  const target = { untouched: true };
+  assert.throws(() => snapshot.restore(target, saved), { code: 'SNAPSHOT_INVALID' });
+  assert.deepEqual(target, { untouched: true });
+});
+
 test('invalid, oversized and incompatible snapshots fail without modifying the current workspace', async () => {
   const saved = await snapshot.capture(makeState());
   const target = { current: 'untouched' };

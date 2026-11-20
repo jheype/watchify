@@ -1,8 +1,8 @@
 {
   "name": "watchify",
-  "version": "6.4.1",
+  "version": "6.4.2",
   "private": true,
-  "description": "Watchify marketplace prototype with private Supabase test workspaces for Zeit.",
+  "description": "Watchify test preview with public signup, private workspaces and optional AI photo assessment.",
   "scripts": {
     "dev": "node server/start.cjs",
     "start": "node server/start.cjs",

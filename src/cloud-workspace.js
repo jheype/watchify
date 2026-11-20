@@ -1,4 +1,4 @@
-/* Supabase persistence for isolated tester workspaces, using the official Supabase client. */
+/* Supabase persistence for isolated account workspaces, using the official Supabase client. */
 (function attachCloudWorkspace(root) {
   'use strict';
   const TABLE = 'tester_workspaces';
@@ -31,7 +31,7 @@
       if (disposed || start !== epoch) throw error('AUTH_CHANGED', 'The signed-in account changed. Reopen this workspace before saving.');
     }
     function normalise(failure, fallback = 'SAVE_FAILED') {
-      if (failure?.code && ['AUTH_REQUIRED', 'AUTH_CHANGED', 'TESTER_REQUIRED', 'CONFLICT', 'LOAD_REQUIRED', 'UNSAVED_CHANGES', 'SNAPSHOT_INVALID', 'SNAPSHOT_VERSION', 'SNAPSHOT_MEDIA', 'SNAPSHOT_TOO_LARGE'].includes(failure.code)) return failure;
+      if (failure?.code && ['AUTH_REQUIRED', 'AUTH_CHANGED', 'CONFLICT', 'LOAD_REQUIRED', 'UNSAVED_CHANGES', 'SNAPSHOT_INVALID', 'SNAPSHOT_VERSION', 'SNAPSHOT_MEDIA', 'SNAPSHOT_TOO_LARGE'].includes(failure.code)) return failure;
       if (failure?.code === '42501' || failure?.status === 403) return error('PERMISSION_DENIED', 'This account does not have permission to save this workspace.');
       if (failure?.status === 401 || ['PGRST301', 'PGRST302', 'bad_jwt', 'session_not_found', 'refresh_token_not_found'].includes(failure?.code)) return error('AUTH_REQUIRED', 'Please sign in again. Your unsaved changes have been kept.');
       const transient = failure instanceof TypeError || failure?.status >= 500 || failure?.status === 429 || failure?.code === 'PGRST000' || /fetch|network|timeout|timed? out|connection/i.test(failure?.message || '');
@@ -44,14 +44,10 @@
       checkEpoch(start);
       if (response.error) throw normalise(response.error, 'AUTH_REQUIRED');
       const user = response.data?.user;
-      if (!user?.id || user.is_anonymous) throw error('AUTH_REQUIRED', 'Sign in with your tester account to open a private workspace.');
+      if (!user?.id || user.is_anonymous) throw error('AUTH_REQUIRED', 'Sign in with your account to open a private workspace.');
       if (observedUserId !== undefined && observedUserId !== user.id) throw error('AUTH_CHANGED', 'The signed-in account changed. Reopen this workspace before saving.');
       if (userId && user.id !== userId) throw error('AUTH_CHANGED', 'The signed-in account changed. Reopen this workspace before saving.');
       observedUserId = user.id;
-      const membership = await client.from('preview_testers').select('user_id,enabled').eq('user_id', user.id).eq('enabled', true).maybeSingle();
-      checkEpoch(start);
-      if (membership.error) throw normalise(membership.error, 'LOAD_FAILED');
-      if (!membership.data || membership.data.user_id !== user.id || membership.data.enabled !== true) throw error('TESTER_REQUIRED', 'This account has not been enabled for the Zeit preview. Ask João to add your tester account.');
       return user.id;
     }
     function checkRow(row) {

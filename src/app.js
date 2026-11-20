@@ -39,14 +39,14 @@
     watches: fixtures.watches.map(w => ({...w,photos:w.photos.map(p=>({...p}))})), saved, currency, compare:[],
     filters:{query:'',brands:[],condition:'',fullSet:false,maxPrice:40000,sort:'recommended'}, chip:'all', visible:8,
     mobileFilters:false, spotlightId:'datejust', activity:[], activitySequence:0, syncAt:'Not yet synced', syncCount:0, syncBusy:false,
-    sell:{step:1,photos:[],sample:false,busy:false,watchId:'santos',condition:'Very good',box:true,papers:true,year:2018,askingPrice:null,description:'',...freshDeclarations()},
+    sell:{step:1,photos:[],sample:false,assessmentMode:null,busy:false,watchId:'santos',condition:'Very good',box:true,papers:true,year:2018,askingPrice:null,description:'',...freshDeclarations()},
     sellDraft:false, listingSequence:0, uploadBusy:false, toastTimer:null, analysisTimer:null, searchTimer:null, syncTimer:null, returnFocus:null,
     live:{loading:Boolean(liveAPI),session:null,error:'',connectionBusy:false},liveRevision:0,liveController:null,assetCleanup:null
   };
   if (preview) await preview.restoreWorkspace(state);
   const money = n => D.formatMoney(n,state.currency);
-  const watchMoney = (w,n) => w.photoAssessment ? new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(n) : money(n);
-  const marketMoney = w => w.photoAssessment ? (Number.isFinite(w.marketQuote?.marketPrice) ? new Intl.NumberFormat('en-GB',{style:'currency',currency:w.marketQuote.currency}).format(w.marketQuote.marketPrice) : 'Not available') : money(w.marketPrice);
+  const watchMoney = (w,n) => w.photoAssessment || w.assessmentMode==='manual' ? new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(n) : money(n);
+  const marketMoney = w => w.assessmentMode==='manual' ? 'Not available' : w.photoAssessment ? (Number.isFinite(w.marketQuote?.marketPrice) ? new Intl.NumberFormat('en-GB',{style:'currency',currency:w.marketQuote.currency}).format(w.marketQuote.marketPrice) : 'Not available') : Number.isFinite(w.marketPrice)?money(w.marketPrice):'Not available';
   const settlementMoney = n => new Intl.NumberFormat('en-GB',{style:'currency',currency:state.currency,minimumFractionDigits:2,maximumFractionDigits:2}).format(D.convertMoney(n,state.currency));
   const byId = id => state.watches.find(w=>w.id===id);
   const sellWatch = () => state.sell.liveMode ? {
@@ -58,7 +58,7 @@
   const activeWatches = () => state.watches.filter(w=>w.status==='active');
   const persisted = () => { if (preview) return; try {localStorage.setItem('watchify.preferences.v1',JSON.stringify({saved:state.saved.filter(id=>fixtures.watches.some(w=>w.id===id)),currency:state.currency}));}catch{} };
   const route = () => location.hash.slice(1).split('/');
-  const discount = w => Number.isFinite(w.marketPrice)&&w.marketPrice>0&&(!w.photoAssessment||w.marketQuote?.currency==='GBP') ? Math.round((1-w.price/w.marketPrice)*100) : null;
+  const discount = w => w.assessmentMode!=='manual'&&Number.isFinite(w.marketPrice)&&w.marketPrice>0&&(!w.photoAssessment||w.marketQuote?.currency==='GBP') ? Math.round((1-w.price/w.marketPrice)*100) : null;
   const pricePosition = w => { const n=discount(w); return n===null ? (w.photoAssessment&&w.marketQuote?.currency&&w.marketQuote.currency!=='GBP'?'Different currency':'Unavailable') : n>0 ? n+'% below' : n<0 ? Math.abs(n)+'% above' : 'At'; };
   const nextActivityId = type => 'WF-'+type+String(++state.activitySequence).padStart(3,'0');
   function toast(message){ const el=$('#toast'); el.textContent=message; el.classList.add('show'); clearTimeout(state.toastTimer); state.toastTimer=setTimeout(()=>el.classList.remove('show'),4200); }
@@ -79,7 +79,7 @@
     const promotion=member.store?.promotionFor(w.id);
     const kit=w.box&&w.papers?'Box & papers':w.box?'Box included':w.papers?'Papers included':'Watch only';
     const position=Number.isFinite(discount(w))?pricePosition(w)+' market reference':'Market reference unavailable';
-    return `<article class="watch-card"><div class="plate-heading"><span>${esc(w.brand)}</span><span>${w.year}</span></div><div class="watch-photo"><span class="card-photo-label ${promotion?'promoted-label':''} ${w.status!=='active'?'card-status':''}">${w.status==='active'?(promotion?'Promoted':esc(kit)):w.status==='pending_review'?'In review':esc(w.status)}</span><button class="icon-btn favourite ${state.saved.includes(w.id)?'saved':''}" data-action="save" data-id="${esc(w.id)}" aria-pressed="${state.saved.includes(w.id)}" aria-label="${state.saved.includes(w.id)?'Unsave':'Save'} ${esc(w.brand+' '+w.model)}">${icon('heart')}</button><a href="#watch/${esc(w.id)}" aria-label="View ${esc(w.brand+' '+w.model)}"><img src="${esc(w.image)}" alt="${esc(w.brand+' '+w.model+' reference photograph')}" width="500" height="500" loading="lazy" decoding="async"></a><span class="photo-count">${icon('camera')}${w.photos.length} photo${w.photos.length===1?'':'s'}</span><span class="card-condition" title="Condition declared by the seller">${esc(w.condition)}</span></div><div class="card-info"><div class="card-brand-row"><p class="card-brand">${esc(w.reference)}</p><span>${esc(w.size)}</span></div><h3 class="card-title"><a href="#watch/${esc(w.id)}">${esc(w.model)}</a></h3><p class="card-reference">${esc(w.condition)} <span>·</span> ${esc(kit)}</p><div class="card-bottom"><div><span class="card-price">${watchMoney(w,w.price)}</span><span class="card-price-note">${w.photoAssessment?'Asking price · GBP':'Asking price'}</span></div><a class="card-view" href="#watch/${esc(w.id)}" aria-label="View details of ${esc(w.brand+' '+w.model)}">View piece ${icon('arrow','small')}</a></div><div class="card-foot"><span title="${esc(position)}">${esc(w.dealer)}</span><button class="compare-toggle" data-action="compare" data-id="${esc(w.id)}" aria-pressed="${state.compare.includes(w.id)}" aria-label="Compare ${esc(w.brand+' '+w.model)}">${icon(state.compare.includes(w.id)?'check':'plus','small')} Compare</button></div></div></article>`;
+    return `<article class="watch-card"><div class="plate-heading"><span>${esc(w.brand)}</span><span>${w.year}</span></div><div class="watch-photo"><span class="card-photo-label ${promotion?'promoted-label':''} ${w.status!=='active'?'card-status':''}">${w.status==='active'?(promotion?'Promoted':esc(kit)):w.status==='pending_review'?'In review':esc(w.status)}</span><button class="icon-btn favourite ${state.saved.includes(w.id)?'saved':''}" data-action="save" data-id="${esc(w.id)}" aria-pressed="${state.saved.includes(w.id)}" aria-label="${state.saved.includes(w.id)?'Unsave':'Save'} ${esc(w.brand+' '+w.model)}">${icon('heart')}</button><a href="#watch/${esc(w.id)}" aria-label="View ${esc(w.brand+' '+w.model)}"><img src="${esc(w.image)}" alt="${esc(w.brand+' '+w.model+' reference photograph')}" width="500" height="500" loading="lazy" decoding="async"></a><span class="photo-count">${icon('camera')}${w.photos.length} photo${w.photos.length===1?'':'s'}</span><span class="card-condition" title="Condition declared by the seller">${esc(w.condition)}</span></div><div class="card-info"><div class="card-brand-row"><p class="card-brand">${esc(w.reference)}</p><span>${esc(w.size)}</span></div><h3 class="card-title"><a href="#watch/${esc(w.id)}">${esc(w.model)}</a></h3><p class="card-reference">${esc(w.condition)} <span>·</span> ${esc(kit)}${w.assessmentMode==='manual'?' <span>·</span> Not AI verified':''}</p><div class="card-bottom"><div><span class="card-price">${watchMoney(w,w.price)}</span><span class="card-price-note">${w.photoAssessment||w.assessmentMode==='manual'?'Asking price · GBP':'Asking price'}</span></div><a class="card-view" href="#watch/${esc(w.id)}" aria-label="View details of ${esc(w.brand+' '+w.model)}">View piece ${icon('arrow','small')}</a></div><div class="card-foot"><span title="${esc(position)}">${esc(w.dealer)}</span><button class="compare-toggle" data-action="compare" data-id="${esc(w.id)}" aria-pressed="${state.compare.includes(w.id)}" aria-label="Compare ${esc(w.brand+' '+w.model)}">${icon(state.compare.includes(w.id)?'check':'plus','small')} Compare</button></div></div></article>`;
   }
   function catalogueCards(){const list=filtered();return list.length?list.slice(0,state.visible).map(card).join(''):empty('No watches found.','Try a different reference or reset your filters.','Reset filters','reset-filters');}
   function loadHTML(){const length=filtered().length;return `${state.visible<length?`<button class="btn outline" data-action="show-all">Discover more watches ${icon('arrow','small')}</button>`:''}<p>Showing ${Math.min(state.visible,length)} of ${length} watches</p>`;}
@@ -88,24 +88,23 @@
   function journalCards(full=false){return `<section class="editorial"><div class="section-heading"><div><p class="eyebrow">A LITTLE KNOW-HOW</p><h2>Field notes.</h2></div>${!full?`<a href="#journal" class="text-link">All the notes ${icon('arrow','small')}</a>`:''}</div><div class="editorial-grid">${fixtures.articles.map((a,i)=>`<button class="editorial-card" data-action="article" data-id="${a.id}"><div class="editorial-image"><img src="${a.image}" alt="" width="500" height="320" loading="lazy"><span>0${i+1}</span></div><div class="editorial-card-copy"><span class="category">${a.category}</span><h3>${a.title} ${icon('arrow')}</h3><p>${a.subtitle}</p></div></button>`).join('')}</div></section>`;}
   function detail(id){
     const w=byId(id);if(!w)return notFound();
-    const pending=w.status==='pending_review';
-    const detailMoney=w.photoAssessment?n=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(n):money;
-    const sourceQuote=w.marketQuote;
-    const sourceMoney=n=>new Intl.NumberFormat('en-GB',{style:'currency',currency:sourceQuote?.currency||'GBP',maximumFractionDigits:2}).format(n);
+    const pending=w.status==='pending_review',manual=w.assessmentMode==='manual';
+    const detailMoney=w.photoAssessment||manual?n=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(n):money;
     const accessories=w.box&&w.papers?'Original box & papers':w.box?'Original box':w.papers?'Original papers':'Watch only';
     const specification=[['Reference',w.reference],['Year',w.year],['Case size',w.size],['Case material',w.material],['Movement',w.movement],['Dial',w.dial],['Power reserve',w.power],['Original box',w.box?'Included':'Not included'],['Original papers',w.papers?'Included':'Not included'],['Listing ID','WF-'+w.id.toUpperCase()]];
     return `<div class="container page watch-detail-page"><div class="breadcrumbs"><a href="${pending?'#account/listings':'#explore'}">${pending?'Your submissions':'The collection'}</a>${icon('chevron')}<span>${esc(w.brand)}</span>${icon('chevron')}<span>${esc(w.model)}</span></div>
+      ${manual?`<section class="submission-notice"><span>${icon('document')}</span><div><strong>Seller-declared · Not AI verified</strong><p>This listing is published only in your private test workspace. Other accounts cannot see it. Purchases and offers are simulated.</p></div><a href="#account/listings">Manage listing ${icon('arrow','small')}</a></section>`:''}
       ${pending?`<section class="submission-notice"><span>${icon('document')}</span><div><strong>Awaiting inspection</strong><p>This submission is private. The watch is not available to buy while its condition and history await review.</p></div><a href="#account/listings">Manage submissions ${icon('arrow','small')}</a></section>`:''}
       <div class="detail-layout"><section aria-label="Watch photographs"><div class="gallery-main" id="gallery-main"><img id="gallery-image" src="${esc(w.image)}" alt="${esc(w.brand+' '+w.model+' — '+w.photos[0].label)}" width="800" height="800"><span class="gallery-caption" id="gallery-caption">${esc(w.photos[0].label)} · Click to take a closer look</span></div><div class="gallery-thumbs">${w.photos.map((p,i)=>`<button class="${i===0?'active':''}" data-action="gallery" data-id="${esc(w.id)}" data-index="${i}" aria-label="${esc(p.label)}" aria-pressed="${i===0}"><img src="${esc(p.src)}" alt="" width="80" height="80"></button>`).join('')}</div></section>
       <section class="detail-info"><p class="detail-maker">${esc(w.brand)}</p><h1>${esc(w.model)}</h1><p class="detail-subtitle">Ref. ${esc(w.reference)} · ${esc(w.size)} · ${w.year}</p>${globalThis.WatchifyWristFit?.renderTrigger(w)||''}<div class="detail-tags"><span class="condition-label">${esc(w.condition)} <small>Seller-declared</small></span><span class="badge grey">${accessories}</span></div>
       <dl class="condition-overview"><div><dt>Polishing history</dt><dd>${polishingLabel(w.polishing)}</dd></div><div><dt>Wear history</dt><dd>${wearLabel(w.wearHistory)}</dd></div></dl>
-      <div class="price-section"><div class="detail-price">${detailMoney(w.price)} <button class="icon-btn favourite-inline ${state.saved.includes(w.id)?'saved':''}" data-action="save" data-id="${esc(w.id)}" aria-pressed="${state.saved.includes(w.id)}" aria-label="Save ${esc(w.model)}">${icon('heart')}</button></div><p>Asking price · ${w.photoAssessment?'GBP':state.currency}</p><div class="market-box"><div><span>Market reference</span><strong>${w.photoAssessment?(Number.isFinite(sourceQuote?.marketPrice)?sourceMoney(sourceQuote.marketPrice):'Not available'):money(w.marketPrice)}</strong></div><p>${w.photoAssessment?'Condition adjustment requires review':pricePosition(w)+' reference'}</p></div>
+      <div class="price-section"><div class="detail-price">${detailMoney(w.price)} <button class="icon-btn favourite-inline ${state.saved.includes(w.id)?'saved':''}" data-action="save" data-id="${esc(w.id)}" aria-pressed="${state.saved.includes(w.id)}" aria-label="Save ${esc(w.model)}">${icon('heart')}</button></div><p>Asking price · ${w.photoAssessment||manual?'GBP':state.currency}</p><div class="market-box"><div><span>Market reference</span><strong>${marketMoney(w)}</strong></div><p>${manual?'Seller-set price. No market estimate attached.':w.photoAssessment?'Condition adjustment requires review':pricePosition(w)+' reference'}</p></div>
       ${w.status!=='active'&&!pending?`<p class="unavailable">This listing is ${esc(w.status)} and is currently unavailable.</p>`:''}
       ${pending?`<div class="inspection-note"><strong>Review before release</strong><p>Your declarations are recorded. Inspection must confirm the watch before it can enter the marketplace.</p></div>`:w.owned&&member.store?`<div class="detail-buttons"><a class="btn primary" href="#account/listings">Manage your listing ${icon('arrow','small')}</a><a class="btn outline" href="#account/promotion">Promote listing</a></div>`:`<div class="detail-buttons"><button class="btn primary" data-action="reserve" data-id="${esc(w.id)}" ${w.status!=='active'?'disabled':''}>Reserve this watch ${icon('arrow','small')}</button><button class="btn outline" data-action="offer" data-id="${esc(w.id)}" ${w.status!=='active'?'disabled':''}>Make an offer</button></div>`}</div>
       <a class="dealer-card" href="#dealer/${esc(member.dealerId(w))}"><div class="dealer-avatar">${esc(w.dealer.slice(0,1))}</div><div><small>${pending?'Submitted by':'Offered by'}</small><strong>${esc(w.dealer)}</strong><p>${esc(w.location)}</p></div>${icon('arrow','small')}</a>${!w.owned&&!pending?`<button class="btn outline full dealer-message" data-action="message-dealer" data-id="${esc(w.id)}">${icon('mail','small')} Message seller</button>`:''}</section></div>
       <div class="detail-lower"><section class="panel"><p class="eyebrow">The particulars</p><h2>Reference & specifications</h2><div class="spec-grid">${specification.map(([k,v])=>`<div class="spec"><span>${k}</span><strong>${esc(v)}</strong></div>`).join('')}</div></section>
       <section class="panel condition-dossier"><div class="condition-dossier-heading"><div><p class="eyebrow">Condition & provenance</p><h2>A closer look at its history.</h2></div><button class="text-link" data-action="info" data-id="condition">Our condition guide ${icon('arrow','small')}</button></div>
-      <p class="condition-source">Information declared by the seller. ${pending?'Awaiting inspection.':'No independent inspection record is attached.'}</p>
+      <p class="condition-source">Information declared by the seller. ${manual?'Not AI verified. No independent inspection record is attached.':pending?'Awaiting inspection.':'No independent inspection record is attached.'}</p>
       <dl class="history-table">${[['Condition grade',w.condition],['Previous wear',wearLabel(w.wearHistory)],['Visible wear',visibleWearLabel(w.visibleWear)],['Polishing after manufacture',polishingLabel(w.polishing)]].map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
       ${w.description?`<div class="seller-description"><h3>Seller’s description</h3><p>${esc(w.description)}</p></div>`:`<p class="condition-no-notes">No additional condition notes supplied.</p>`}
       <p class="insight-note">Polishing can change the finish; it does not erase a watch’s use history. Photographs alone cannot confirm an unworn history, authenticity or mechanical condition. These require specialist assessment.</p></section></div></div>`;
@@ -183,7 +182,7 @@
     finally{state.live.connectionBusy=false;rerenderSell();}
   }
   function photoConflicts(){
-    const s=state.sell,a=s.analysis;if(!s.liveMode||!a)return [];
+    const s=state.sell,a=s.analysis;if(!s.liveMode||s.assessmentMode==='manual'||!a)return [];
     const errors=[];
     const wear=a.condition?.visibleWear;
     if(wear==='visible'&&s.visibleWear!=='visible'||wear==='minor'&&s.visibleWear==='none')errors.push({field:'visibleWear',message:'The photo assessment indicates more visible wear than declared. Review the marks and update your declaration.'});
@@ -192,12 +191,26 @@
     if(s.condition==='Unworn'&&(wear!=='none'||a.condition?.suggestedGrade!=='Excellent'||a.polishing?.assessment==='possible'))errors.push({field:'condition',message:'These photographs do not support an Unworn declaration.'});
     return errors;
   }
+  function confirmedIdentity(s){
+    return s.identityConfirmed===true&&['brand','model','reference'].every(key=>typeof s.identity?.[key]==='string'&&s.identity[key].trim().length>0&&s.identity[key].length<=100);
+  }
+  function ownPhotosReady(s){
+    return s.liveMode===true&&s.sample!==true&&s.photos.length>0&&s.photos.length<=6&&s.photos.every(photo=>photo.file&&D.validatePhoto(photo.file)===null&&typeof photo.url==='string'&&/^(blob:|data:image\/(jpeg|png|webp);base64,)/.test(photo.url));
+  }
+  function continueManually(){
+    const s=state.sell;
+    if(route()[0]!=='sell'||s.step!==1||state.uploadBusy||s.busy)return;
+    if(!ownPhotosReady(s)){toast('Choose at least one valid photo of your own watch before continuing without AI.');return;}
+    invalidateEvidence();s.photos.forEach(discardAsset);
+    Object.assign(s,{assessmentMode:'manual',identity:s.identity||{brand:'',model:'',reference:''},watchId:'uploaded-watch',step:2});
+    rerenderSell(true);toast('Continue with your own declarations. This listing will not be AI verified.');
+  }
   async function analysePhotos(){
     const s=state.sell;if(state.uploadBusy||!s.photos.length||s.busy)return;
     if(s.sample&&!s.liveMode){s.step=2;rerenderSell(true);return;}
     s.liveMode=true;
-    if(!liveAPI){s.analysisError=preview?'Photo analysis is not connected in this test release. Choose Use catalogue photos to test the listing flow.':'Start the Watchify local server to analyse your photographs.';rerenderSell();return;}
-    invalidateEvidence();const revision=state.liveRevision;
+    if(!liveAPI){s.analysisError=preview?'Photo analysis is not connected in this test release. Continue without AI to enter your own watch details.':'Continue without AI, or start the Watchify local server to analyse your photographs.';rerenderSell();return;}
+    invalidateEvidence();s.assessmentMode='ai';const revision=state.liveRevision;
     state.liveController=new AbortController();const signal=state.liveController.signal;
     s.busy=true;s.busyLabel='Uploading your photographs';s.analysisError='';rerenderSell();
     try{
@@ -217,7 +230,7 @@
     finally{if(revision===state.liveRevision){s.busy=false;state.liveController=null;rerenderSell(true);}}
   }
   async function requestQuote(catalogId,focusStep=false){
-    const s=state.sell;if(!liveAPI||s.busy||!s.analysis||!s.identityConfirmed)return;
+    const s=state.sell;if(!liveAPI||s.busy||s.assessmentMode==='manual'||!s.analysis||!s.identityConfirmed)return;
     const assessment=D.validateListingCondition(s),conflicts=photoConflicts();
     if(!assessment.valid||conflicts.length){s.step=3;rerenderSell(true);showConditionErrors(!assessment.valid?assessment:{errors:conflicts});return;}
     const selectedId=catalogId===undefined?s.catalogId:catalogId;
@@ -253,17 +266,17 @@
   function showInfo(id){const info={
     about:['About Watchify','Watchify brings watch lovers and dealers together. Browse considered photography, compare asking prices and find the details that help you choose. When it is time to sell, create a listing and manage your offers in My Watchify.'],
     privacy:['Your data','Selected photos stay in this tab until you start analysis. Analysis uploads a sanitised copy to the local server and sends it to the connected AI provider. Original filenames and metadata are not used for recognition. Local evidence expires with the session; provider retention follows its own terms. Connect your account before choosing photos, because sign-in reloads this page. Favourite IDs and your currency preference are stored on your device. Profile preferences, seller drafts and activity are kept for the current session.'],
-    condition:['The Watchify condition standard','Unworn is reserved for a watch declared never worn, with no visible wear and no polishing or refinishing after manufacture. Factory finishing is not the same as later polishing. A polished or previously worn watch can be in excellent condition, but it must not be described as Unworn. Unknown history is shown as unknown. Seller declarations require inspection before a new submission enters the marketplace.'],
+    condition:['The Watchify condition standard','Unworn is reserved for a watch declared never worn, with no visible wear and no polishing or refinishing after manufacture. Factory finishing is not the same as later polishing. A polished or previously worn watch can be in excellent condition, but it must not be described as Unworn. Unknown history is shown as unknown. Manual test listings are marked seller-declared and not AI verified. Independent inspection is not implied by publication.'],
     pricing:['Good value, explained.','Each asking price is compared with a market reference and displayed in your selected currency. The difference is shown as a percentage of that reference. A valuation takes condition, year, box and papers into account. An estimate is a guide; the seller chooses the asking price.']
     };const [title,copy]=info[id]||info.about;openModal(title,`<p class="modal-copy">${copy}</p><div class="button-row"><button class="btn primary" data-action="close-modal">Got it ${icon('check','small')}</button></div>`);}
-  function samplePhotos(){if(state.uploadBusy||state.sell.busy)return;invalidateEvidence();releasePhotos();const w=byId('santos');state.sell.photos=w.photos.map((p,i)=>({url:p.src,name:p.label,local:false,role:['Front & dial','Other detail','Bracelet & clasp','Box','Papers'][i]}));Object.assign(state.sell,{sample:true,liveMode:false,identity:null,watchId:'santos',condition:'Very good',box:true,papers:true,year:2018,askingPrice:null,...freshDeclarations()});rerenderSell();toast('Santos catalogue photos added.');}
+  function samplePhotos(){if(state.uploadBusy||state.sell.busy)return;invalidateEvidence();releasePhotos();const w=byId('santos');state.sell.photos=w.photos.map((p,i)=>({url:p.src,name:p.label,local:false,role:['Front & dial','Other detail','Bracelet & clasp','Box','Papers'][i]}));Object.assign(state.sell,{sample:true,liveMode:false,assessmentMode:null,identity:null,watchId:'santos',condition:'Very good',box:true,papers:true,year:2018,askingPrice:null,...freshDeclarations()});rerenderSell();toast('Santos catalogue photos added.');}
   function releasePhotos(){state.sell.photos.forEach(p=>{discardAsset(p);if(p.local&&!listingPhotoURLs.has(p.url))URL.revokeObjectURL(p.url);});state.sell.photos=[];}
   async function addPhotos(files){
     if(state.uploadBusy||state.sell.busy){toast('Please wait for the current photos to finish loading.');return;}
     if(state.sell.sample){releasePhotos();state.sell.sample=false;}
     const available=6-state.sell.photos.length;if(available<=0){toast('You can add up to 6 photos. Remove one to add another.');return;}
     const queue=[...files];if(queue.length>available)toast(`Only the first ${available} photos will be added.`);
-    invalidateEvidence();if(!state.sell.liveMode)Object.assign(state.sell,{year:'',box:false,papers:false,askingPrice:null,...freshDeclarations()});state.sell.liveMode=true;state.sell.identity=null;state.uploadBusy=true;const startButton=$('[data-action="analyse"]');if(startButton)startButton.disabled=true;
+    invalidateEvidence();if(!state.sell.liveMode)Object.assign(state.sell,{assessmentMode:null,year:'',box:false,papers:false,askingPrice:null,...freshDeclarations()});state.sell.liveMode=true;state.sell.identity=null;state.uploadBusy=true;for(const action of ['analyse','sell-manual']){const startButton=$('[data-action="'+action+'"]');if(startButton)startButton.disabled=true;}
     let errors=[];
     try {for(const file of queue.slice(0,available)){
       const error=D.validatePhoto(file);if(error){errors.push(error);continue;}
@@ -278,25 +291,68 @@
     }}finally{state.uploadBusy=false;rerenderSell();}
     if(errors.length)toast(errors[0]);else toast('Photos added to your listing.');
   }
-  function resetSell(){cancelLiveRequest();clearTimeout(state.analysisTimer);releasePhotos();Object.assign(state.sell,{step:1,sample:false,liveMode:false,analysis:null,analysisError:'',quote:null,quoteError:'',quoteErrorCode:'',identity:null,identityConfirmed:false,catalogId:null,busy:false,watchId:'santos',condition:'Very good',box:true,papers:true,year:2018,askingPrice:null,description:'',...freshDeclarations()});state.sellDraft=false;rerenderSell();}
-  function publishDemo(){
+  function resetSell(){cancelLiveRequest();clearTimeout(state.analysisTimer);releasePhotos();Object.assign(state.sell,{step:1,sample:false,liveMode:false,assessmentMode:null,analysis:null,analysisError:'',quote:null,quoteError:'',quoteErrorCode:'',identity:null,identityConfirmed:false,catalogId:null,busy:false,watchId:'santos',condition:'Very good',box:true,papers:true,year:2018,askingPrice:null,description:'',...freshDeclarations()});state.sellDraft=false;rerenderSell();}
+  function decodeRestoredPhoto(url){
+    return new Promise((resolve,reject)=>{
+      const image=new Image();
+      const finish=error=>{clearTimeout(timer);image.onload=null;image.onerror=null;error?reject(error):resolve();};
+      const timer=setTimeout(()=>finish(new Error('A restored photo took too long to read. Choose that photo again.')),6000);
+      image.onload=()=>finish(!image.naturalWidth||!image.naturalHeight?new Error('A restored photo could not be decoded. Choose that photo again.'):image.naturalWidth*image.naturalHeight>24000000?new Error('A restored photo exceeds 24 megapixels. Choose a smaller photo.'):null);
+      image.onerror=()=>finish(new Error('A restored photo could not be decoded. Remove it and choose the original photo again.'));
+      image.src=url;
+    });
+  }
+  async function checkRestoredPhotos(s){
+    const revision=state.liveRevision;
+    const photos=s.photos.map(photo=>({photo,url:photo.url,file:photo.file,role:photo.role,name:photo.name}));
+    const fingerprint=()=>JSON.stringify([s.step,s.liveMode,s.assessmentMode,s.sample,s.identity,s.identityConfirmed,s.condition,s.polishing,s.wearHistory,s.visibleWear,s.year,s.box,s.papers,s.conditionConfirmed,s.askingPrice,s.description,s.listingConfirmed]);
+    const original=fingerprint();
+    const current=()=>state.sell===s&&state.liveRevision===revision&&route()[0]==='sell'&&original===fingerprint()&&photos.length===s.photos.length&&photos.every((saved,i)=>saved.photo===s.photos[i]&&saved.url===s.photos[i].url&&saved.file===s.photos[i].file&&saved.role===s.photos[i].role&&saved.name===s.photos[i].name);
+    let renderAllowed=true;
+    s.busy=true;s.busyLabel='Checking restored photographs';rerenderSell();
+    try{
+      for(const photo of photos){
+        if(photo.url.startsWith('data:image/'))await decodeRestoredPhoto(photo.url);
+        if(preview)preview.assertActive();
+        if(!current())return false;
+      }
+      return current;
+    }catch(error){
+      try{if(preview)preview.assertActive();}catch{renderAllowed=false;return false;}
+      if(error.code==='AUTH_CHANGED'){renderAllowed=false;return false;}
+      if(current()){
+        s.step=1;s.listingConfirmed=false;s.conditionConfirmed=false;
+        s.analysisError=error.message||'A restored photo could not be read. Choose the original photo again.';
+        toast(s.analysisError);
+      }
+      return false;
+    }finally{
+      s.busy=false;
+      if(renderAllowed&&state.sell===s)rerenderSell();
+    }
+  }
+  async function publishDemo(){
     const s=state.sell,w=sellWatch();
+    const manual=s.liveMode&&s.assessmentMode==='manual';
+    try{if(preview)preview.assertActive();}catch{return;}
     if(s.step!==5||!w||!s.photos.length||state.uploadBusy||s.busy||!Number.isInteger(s.askingPrice)||s.askingPrice<100||s.askingPrice>1000000){toast('Review the photos and a valid asking price before submitting.');return;}
-    if(s.liveMode&&(!s.analysis||!s.identityConfirmed)){toast('Complete the photo assessment and confirm this watch’s identity first.');return;}
+    if(s.liveMode&&(!confirmedIdentity(s)||(manual?!ownPhotosReady(s):s.analysis?.photoQuality?.usable!==true))){toast(manual?'Check your own photos and confirm the brand, model and exact reference first.':'Complete the photo assessment and confirm this watch’s identity first.');return;}
     const conflicts=photoConflicts();if(conflicts.length){showConditionErrors({errors:conflicts});return;}
     const condition=D.validateListingCondition(s);
     if(!condition.valid){showConditionErrors(condition);return;}
     if(s.listingConfirmed!==true){const error=$('#listing-error');if(error)error.textContent='Confirm the final declaration before submitting.';toast('Confirm the final declaration before submitting.');return;}
+    if(manual&&s.photos.some(photo=>photo.url.startsWith('data:image/'))){const stillCurrent=await checkRestoredPhotos(s);if(!stillCurrent||!stillCurrent())return;}
+    try{if(preview)preview.assertActive();}catch{return;}
     const id='listing-'+Date.now().toString(36)+'-'+(++state.listingSequence);
     const listing={...w,id,image:s.photos[0].url,memberSaleId:undefined,year:s.year,condition:s.condition,
-      polishing:s.polishing,wearHistory:s.wearHistory,visibleWear:s.visibleWear,conditionSource:'seller',reviewStatus:'pending',
-      declarationVersion:'2026-11-09',declaredAt:new Date().toISOString(),photoAssessment:s.liveMode?s.analysis:null,marketQuote:s.liveMode?s.quote:null,
+      polishing:s.polishing,wearHistory:s.wearHistory,visibleWear:s.visibleWear,conditionSource:'seller',reviewStatus:manual?'unverified':'pending',assessmentMode:s.liveMode?(manual?'manual':'ai'):null,
+      declarationVersion:'2026-11-09',declaredAt:new Date().toISOString(),photoAssessment:s.liveMode&&!manual?s.analysis:null,marketQuote:s.liveMode&&!manual?s.quote:null,
       box:s.box,papers:s.papers,price:s.askingPrice,description:String(s.description||'').slice(0,1200),workspaceOrderId:undefined,
-      status:'pending_review',owned:true,badge:'Awaiting inspection',dealer:state.member?.profile?.nickname||'Your collection',location:'Private submission',
+      marketPrice:manual?null:w.marketPrice,status:manual?'active':'pending_review',owned:true,badge:manual?'Seller-declared · Not AI verified':'Awaiting inspection',dealer:state.member?.profile?.nickname||'Your collection',location:manual?'Private test workspace':'Private submission',
       photos:s.photos.map(p=>({src:p.url,label:p.role||p.name||'Watch detail'}))};
     s.photos.forEach(p=>{if(p.local)listingPhotoURLs.add(p.url);});state.watches.push(listing);
     member.onPublish(listing);resetSell();location.hash='account/listings';
-    toast('Submission received. Your watch stays private while awaiting inspection.');
+    toast(manual?'Listing published in your test workspace. Seller-declared, not AI verified.':'Submission received. Your watch stays private while awaiting inspection.');
   }
   function syncInventory(){if(state.syncBusy)return;state.syncBusy=true;render();state.syncTimer=setTimeout(()=>{state.syncCount++;const speed=byId('speedmaster'),gmt=byId('gmt-pepsi');if(!speed.memberSaleId&&speed.status!=='reserved')speed.price=state.syncCount%2?4900:4950;if(!gmt.memberSaleId&&(gmt.status==='active'||gmt.status==='sold'))gmt.status=state.syncCount%2?'sold':'active';state.syncAt='Sync '+state.syncCount+' completed · just now';state.syncBusy=false;if(['inventory','account'].includes(route()[0]))render();else if(route()[0]==='watch'||!route()[0]||route()[0]==='explore')render();toast('Sync complete. Prices and availability updated.');},1300);}
   function toggleSaved(id){if(!byId(id))return;const wasSaved=state.saved.includes(id);state.saved=wasSaved?state.saved.filter(x=>x!==id):[...state.saved,id];persisted();header();if(route()[0]==='saved')$('#main').innerHTML=savedPage();else $$('[data-action="save"]').filter(b=>b.dataset.id===id).forEach(b=>{b.classList.toggle('saved',!wasSaved);b.setAttribute('aria-pressed',String(!wasSaved));b.setAttribute('aria-label',`${wasSaved?'Save':'Unsave'} ${byId(id).brand} ${byId(id).model}`);});toast(wasSaved?'Removed from your saved collection.':'Saved to your collection.');}
@@ -336,26 +392,27 @@
       case 'set-cover':{const n=Number(index);if(route()[0]!=='sell'||state.sell.step!==1||state.uploadBusy||state.sell.busy||!Number.isInteger(n)||n<1||n>=state.sell.photos.length)return;const [photo]=state.sell.photos.splice(n,1);state.sell.photos.unshift(photo);invalidateEvidence();rerenderSell();toast('Cover photo updated.');break;}
       case 'sell-go-step':{const target=Number(button.dataset.step);if(route()[0]!=='sell'||state.uploadBusy||state.sell.busy||!Number.isInteger(target)||target<1||target>=state.sell.step)return;state.sell.step=target;rerenderSell(true);break;}
       case 'analyse':analysePhotos();break;
+      case 'sell-manual':continueManually();break;
       case 'refresh-connection':refreshConnection();break;
       case 'connect-chatgpt':connectChatGPT();break;
       case 'disconnect-chatgpt':connectChatGPT(true);break;
       case 'retry-quote':requestQuote();break;
       case 'choose-market-variant':requestQuote(button.dataset.catalogId);break;
-      case 'choose-ai-candidate':{const candidate=state.sell.analysis?.candidates?.[Number(index)];if(!candidate||state.sell.busy)return;state.sell.identity={brand:String(candidate.brand||''),model:String(candidate.model||''),reference:String(candidate.reference||'')};state.sell.identityConfirmed=false;invalidateDeclarations();rerenderSell();break;}
+      case 'choose-ai-candidate':{const candidate=state.sell.analysis?.candidates?.[Number(index)];if(!candidate||state.sell.assessmentMode==='manual'||state.sell.busy)return;state.sell.identity={brand:String(candidate.brand||''),model:String(candidate.model||''),reference:String(candidate.reference||'')};state.sell.identityConfirmed=false;invalidateDeclarations();rerenderSell();break;}
       case 'sell-next':{
         if(route()[0]!=='sell'||state.uploadBusy||state.sell.busy||state.sell.step<2||state.sell.step>=5)return;
         const step=state.sell.step;
         if(step===2&&state.sell.liveMode){
-          if(!state.sell.analysis||state.sell.analysis.photoQuality?.usable!==true){toast('Add clearer photographs and run a new assessment before continuing.');return;}
-          const identity=state.sell.identity;
-          if(!identity?.brand?.trim()||!identity?.model?.trim()||!identity?.reference?.trim()||state.sell.identityConfirmed!==true){const error=$('#identity-error');if(error)error.textContent='Confirm the brand, model and exact reference from the watch or its documents.';return;}
+          const manual=state.sell.assessmentMode==='manual';
+          if(manual?!ownPhotosReady(state.sell):state.sell.analysis?.photoQuality?.usable!==true){toast(manual?'Add a valid photo of your own watch before continuing.':'Add clearer photographs and run a new assessment before continuing.');return;}
+          if(!confirmedIdentity(state.sell)){const error=$('#identity-error');if(error)error.textContent='Confirm the brand, model and exact reference from the watch or its documents.';return;}
         }
         if(step===3){
           state.sell.year=Number($('#valuation-year').value);
           const result=D.validateListingCondition(state.sell);
           if(!result.valid){showConditionErrors(result);return;}
           const conflicts=photoConflicts();if(conflicts.length){showConditionErrors({errors:conflicts});return;}
-          if(state.sell.liveMode){state.sell.step=4;requestQuote(undefined,true);return;}
+          if(state.sell.liveMode){state.sell.step=4;if(state.sell.assessmentMode==='manual')rerenderSell(true);else requestQuote(undefined,true);return;}
           if(state.sell.askingPrice===null){const w=byId(state.sell.watchId);state.sell.askingPrice=D.estimateValue({basePrice:w.marketPrice,condition:state.sell.condition,box:state.sell.box,papers:state.sell.papers,year:state.sell.year}).mid;}
         }
         if(step===4){

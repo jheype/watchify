@@ -1,0 +1,99 @@
+{
+  "version": "6.4.2",
+  "release_scope": {
+    "manual_listing_without_ai": true,
+    "seller_declared_not_ai_verified_label": true,
+    "public_account_signup_ui": true,
+    "email_confirmation_and_password_recovery_ui": true,
+    "workspace_visibility": "Private to each authenticated, non-anonymous account",
+    "shared_marketplace": false,
+    "live_payments_or_external_messages": false
+  },
+  "verification_status": "Local application checks passed; deployment, email delivery and hosted end-to-end checks remain pending",
+  "external_state": {
+    "github_repository": "https://github.com/jheype/watchify",
+    "github_visibility": "public",
+    "previous_published_commit": "5328ace21f22aaf2ab2f8725f6bc2b7d9ddc865b",
+    "supabase_organization": "TripApp (agkymdcxgzyjdppxmqoz)",
+    "supabase_project": "Watchify (iqfsalmepkcjawyukiie)",
+    "public_account_migration": {
+      "version": "20261120200953",
+      "name": "allow_public_authenticated_workspaces",
+      "applied": true
+    },
+    "vercel_team": "jheypes-projects (team_55DgnVCODgAtDOB5NMApMhAk)",
+    "vercel_deployment": "Not deployed; native connection requires the owner-confirmed team access grant",
+    "trip": "Preserved; Watchify uses its own project"
+  },
+  "auth_configuration": {
+    "public_email_signup_disabled": false,
+    "email_confirmation_enabled": true,
+    "anonymous_auth_enabled": false,
+    "external_email_delivery": "Not configured by this change and not verified; public confirmation/recovery requires an email provider that supports external recipients",
+    "final_site_and_redirect_urls": "Pending final Vercel domain and Auth settings access",
+    "email_confirmation_disabled_as_workaround": false,
+    "permanent_test_accounts_created": false,
+    "emails_or_invitations_sent": false
+  },
+  "hosted_database_validation": {
+    "migration_history_verified": true,
+    "test_file": "supabase/tests/public_account_rls.sql",
+    "declared_test_groups": 24,
+    "status": "Incomplete: hosted SQL execution did not return a result before cancellation",
+    "test_success_claimed": false,
+    "fixture_cleanup": {
+      "status": "Independently checked after cancellation; no persistent fixture or pending test session observed",
+      "remaining_minimal_synthetic_auth_users": 0,
+      "related_memberships": 0,
+      "related_workspaces": 0,
+      "snapshot_fixture_markers": 0,
+      "pending_test_sessions": 0
+    },
+    "scope": "The SQL test uses synthetic claims and transaction-scoped fixtures; it is not an Auth HTTP sign-in or browser end-to-end test.",
+    "security_advisor_findings": 0,
+    "performance_advisor_findings": 0,
+    "result_file": "supabase/tests/public_account_validation_result.json"
+  },
+  "deployed_browser_validation": {
+    "status": "Not completed; no deployment exists",
+    "pending": [
+      "External account signup and confirmation email delivery",
+      "Sign-in and recovery on the deployed origin",
+      "Manual listing publication with own photos and persistence after reload",
+      "Account isolation on the deployed site",
+      "Unauthenticated data denial and excluded server paths"
+    ]
+  },
+  "references": [
+    "https://supabase.com/docs/guides/auth/auth-smtp",
+    "https://supabase.com/docs/guides/auth/redirect-urls"
+  ],
+  "verified_at_utc": "2026-11-20T20:25:18Z",
+  "node_tests": {
+    "tests": 407,
+    "pass": 407,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "syntax_check": "passed",
+  "diff_check": "passed",
+  "static_build": {
+    "status": "passed",
+    "real_supabase_configuration": true,
+    "published_configuration": "Project URL and public publishable key only",
+    "roots": [
+      "assets",
+      "index.html",
+      "robots.txt",
+      "src"
+    ],
+    "server_environment_dependencies_docs_and_tests_excluded": true
+  },
+  "manual_photo_validation": {
+    "new_uploads": "Magic bytes, MIME, decode and 24 megapixel maximum",
+    "restored_photos": "Decoded again before manual publication; corrupt or oversized media rejected",
+    "concurrency": "Publication cancels when photo data, form declarations or the active account change during decoding"
+  }
+}

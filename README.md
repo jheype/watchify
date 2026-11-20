@@ -1,22 +1,22 @@
-# Watchify 6.4.1 — Zeit test preview
+# Watchify 6.4.2 — Zeit test preview
 
 Watchify is a watch marketplace prototype with the 6.4.0 design and Virtual Wrist Fit, prepared for web testing by Zeit. The source was recovered from `Watchify-6.4.0-completo-wrist-fit.zip`, dated 14 November 2026. Trade remains removed.
 
-This release adds individual Supabase test accounts, private saved workspaces and a static Vercel build. Orders, conversations, payments, market analytics and inventory examples remain simulated product flows. They do not execute purchases, send messages to other people or charge money.
+This release adds self-service Supabase test accounts, private saved workspaces, publication using seller-declared condition without AI, and a static Vercel build. Orders, conversations, payments, market analytics and inventory examples remain simulated product flows. They do not execute purchases, send messages to other people or charge money.
 
 ## What is connected
 
 | Area | Behaviour in the hosted test release |
 | --- | --- |
-| Sign-in | Individual email/password accounts through Supabase Auth. An administrator activates each tester. |
-| Workspace | Each authorised tester can save and reopen their own changes, profile, favourites, sample orders, messages and listing drafts. |
+| Sign-in | Email/password signup, confirmation, sign-in and password recovery through Supabase Auth. Each real account can use its own test workspace; no administrator allowlist is required. |
+| Workspace | Each signed-in account can save and reopen its own changes, profile, favourites, sample orders, messages and listing drafts. |
 | Concurrent sessions | Version checks prevent one tab or device from silently replacing newer saved changes. The UI offers recovery and export when saving fails. |
 | Images | Images in a test workspace are private to its account; the complete workspace has an 8 MiB size limit. |
-| Database | Row-level security and explicit grants isolate tester data. Only an administrator can grant tester access. |
+| Database | Row-level security and explicit grants isolate each account's data. Anonymous sessions and access to another account's workspace are denied. |
 | Marketplace | Catalogue and commercial activity use sample records. This is not a shared live trading system. |
 | Virtual Wrist Fit | Available in watch listings, using the existing proportional illustration. |
-| Photo analysis / live pricing | The hosted preview does not publish the local integration server or its credentials. Use catalogue photos to test the listing flow. |
-| Account security | Hosted accounts use real Supabase sign-in. The local password/MFA mock screens are replaced with an accurate test-account status page. |
+| Photo analysis / live pricing | Upload your own photos and choose Continue without AI to declare identity, condition, polishing history and asking price. Manual listings are marked Not AI verified. The optional local AI/pricing server is not deployed. |
+| Account security | Hosted accounts use real Supabase sign-in, confirmation and password recovery. The account page describes the available recovery flow. |
 
 ## Run locally
 
@@ -34,11 +34,13 @@ Local mode does not automatically use the hosted Supabase workspace. Hosted mode
 ## Publish the web preview
 
 1. Use the **Watchify** project (`iqfsalmepkcjawyukiie`) inside the **TripApp** Supabase organisation. The preview has its own database; it does not reuse the Trip project's data.
-2. Apply the SQL in `supabase/migrations` in order and activate individual tester accounts as described in the preview setup guide.
-3. Publish this source to the owner's `jheype/watchify` GitHub repository. Repository visibility does not replace the app's private tester access controls.
+2. Apply the SQL in `supabase/migrations` in order. Configure Auth redirect URLs and a working email provider for public signup confirmation and password recovery as described in the preview setup guide.
+3. Publish this source to the owner's `jheype/watchify` GitHub repository. Repository visibility does not replace authentication or database access controls.
 4. Import that repository into Vercel with the committed `vercel.json` settings.
 5. Set `WATCHIFY_SUPABASE_URL` and `WATCHIFY_SUPABASE_PUBLISHABLE_KEY` for the deployment. Both are public client configuration. Never substitute a service-role or secret key.
 6. Deploy, verify the sign-in and saved workspace on the final URL, then share that URL with the testers.
+
+Public signup requires Supabase email delivery to be configured for external recipients. The built-in sender is restricted to organisation members. This repository preserves email confirmation and reports delivery errors; it does not automatically configure SMTP or claim an unconfirmed account is ready to sign in.
 
 The build command is `npm run build`; the output directory is `dist`. Missing or unsafe Supabase configuration fails the build. All browser libraries are served with the app; no runtime CDN is needed. The output excludes server code, environment files and documentation.
 
@@ -52,17 +54,17 @@ npm test
 npm run build
 ```
 
-The build requires the two public Supabase variables. Unit and integration tests use controlled test data and do not prove a real cloud project or deployment is connected. A release is ready for the team only after sign-in, saving, reload, account separation and access restrictions have been checked against the actual deployment.
+The build requires the two public Supabase variables. See [the 6.4.2 release checks](docs/RELEASE-6.4.2-CHECKS.json) for current validation and remaining deployment/email-delivery requirements. Unit and integration tests use controlled test data and do not prove a real cloud project or deployment is connected. A release is ready for the team only after sign-in, saving, reload, account separation and access restrictions have been checked against the actual deployment.
 
 ## Project structure
 
 | Path | Purpose |
 | --- | --- |
 | `index.html`, `src/`, `assets/` | Existing Watchify interface, catalogue, brand and product flows. |
-| `src/preview-auth.js` | Hosted sign-in, truthful save status and recovery UI. |
+| `src/preview-auth.js` | Hosted signup, sign-in, email confirmation, password recovery and save status. |
 | `src/cloud-workspace.js` | Supabase persistence, version checks and account-change protection. |
 | `src/workspace-snapshot.js` | Validated business-state snapshots; excludes tokens and runtime secrets. |
-| `supabase/migrations/` | Tester access controls, workspace schema and policies. |
+| `supabase/migrations/` | Workspace schema, per-account access policies and migration history. |
 | `tools/build-static.cjs` | Generates the public site with its exact Supabase project configuration. |
 | `server/` | Original loopback-only AI and pricing integration server. Not published by the web build. |
 | `tests/` | Domain, integration, persistence and deployment-boundary checks. |

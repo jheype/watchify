@@ -2,6 +2,7 @@
 (function attachWorkspaceSnapshot(root) {
   'use strict';
   const SCHEMA_VERSION = 1;
+  const domain = typeof module !== 'undefined' && module.exports ? require('./domain.js') : root.WatchifyDomain;
   const MAX_BYTES = 8 * 1024 * 1024;
   const MAX_BACKUP_BYTES = 32 * 1024 * 1024;
   const STATE_KEYS = Object.freeze(['watches', 'saved', 'currency', 'activity', 'activitySequence', 'sell', 'sellDraft', 'listingSequence', 'member', 'workspace', 'business', 'syncAt', 'syncCount']);
@@ -101,6 +102,7 @@
     requireArray(state.sell.photos, 6);
     for (const photo of state.sell.photos) { if (!plain(photo)) fail('SNAPSHOT_INVALID', 'A saved draft photo is invalid.'); requireString(photo.url, MAX_BYTES); }
     if (!Number.isInteger(state.sell.step) || state.sell.step < 1 || state.sell.step > 5) fail('SNAPSHOT_INVALID', 'The saved listing step is invalid.');
+    if (state.sell.assessmentMode != null && !['ai', 'manual'].includes(state.sell.assessmentMode)) fail('SNAPSHOT_INVALID', 'The saved assessment mode is invalid.');
     if (!state.sell.liveMode && !ids.has(state.sell.watchId)) fail('SNAPSHOT_INVALID', 'The saved listing draft references an unknown watch.');
     if (state.sell.identity != null) { if (!plain(state.sell.identity)) fail('SNAPSHOT_INVALID', 'The saved draft identity is invalid.'); for (const field of ['brand', 'model', 'reference']) if (state.sell.identity[field] !== undefined) requireString(state.sell.identity[field], 200); }
     if (!plain(state.member) || !plain(state.member.profile) || !plain(state.workspace)) fail('SNAPSHOT_INVALID', 'The saved member workspace is missing.');
@@ -230,14 +232,37 @@
     const data = visitMedia(checked.state, value => { const match = MEDIA_REF.exec(value); return match ? checked.media[match[1]] : value; });
     data.workspace.profile = data.member.profile;
     data.sell.busy = false;
-    // Session-specific AI evidence must be gathered again before a real local assessment.
-    if (data.sell.liveMode) { data.sell.step = 1; data.sell.identityConfirmed = false; data.sell.conditionConfirmed = false; data.sell.listingConfirmed = false; }
     for (const photo of data.sell.photos) {
       photo.local = false;
       if (DATA_IMAGE.test(photo.url) && typeof root.File === 'function') {
         const [header, body] = photo.url.split(',');
         const bytes = Uint8Array.from(root.atob(body), char => char.charCodeAt(0));
-        photo.file = new root.File([bytes], typeof photo.name === 'string' ? photo.name : 'watch-photo', { type: header.slice(5, header.indexOf(';')) });
+        const mime = header.slice(5, header.indexOf(';'));
+        const extension = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[mime];
+        const original = typeof photo.name === 'string' && !/[\u0000-\u001f]/.test(photo.name) ? photo.name.trim() : '';
+        const base = original.replace(/\.[^.]*$/, '') || 'watch-photo';
+        photo.name = base.slice(0, 255 - extension.length) + extension;
+        photo.file = new root.File([bytes], photo.name, { type: mime });
+      }
+    }
+    if (data.sell.liveMode) {
+      // Approval of a final listing is always renewed after loading a draft.
+      data.sell.listingConfirmed = false;
+      if (data.sell.assessmentMode === 'manual') {
+        const photosReady = data.sell.sample !== true && data.sell.photos.length > 0 && data.sell.photos.every(photo => DATA_IMAGE.test(photo.url) && photo.file && domain?.validatePhoto(photo.file) === null);
+        const identityReady = data.sell.identityConfirmed === true && ['brand', 'model', 'reference'].every(key => typeof data.sell.identity?.[key] === 'string' && data.sell.identity[key].trim().length > 0 && data.sell.identity[key].length <= 100);
+        const conditionReady = domain?.validateListingCondition(data.sell).valid === true;
+        data.sell.identityConfirmed = photosReady && identityReady;
+        data.sell.conditionConfirmed = photosReady && identityReady && conditionReady;
+        if (!photosReady) data.sell.step = 1;
+        else if (!identityReady) data.sell.step = Math.min(data.sell.step, 2);
+        else if (!conditionReady) data.sell.step = Math.min(data.sell.step, 3);
+        else if (!Number.isInteger(data.sell.askingPrice) || data.sell.askingPrice < 100 || data.sell.askingPrice > 1000000) data.sell.step = Math.min(data.sell.step, 4);
+      } else {
+        // AI evidence belongs to the old local session and must be obtained again.
+        data.sell.step = 1;
+        data.sell.identityConfirmed = false;
+        data.sell.conditionConfirmed = false;
       }
     }
     Object.assign(state, data);

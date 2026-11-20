@@ -13,17 +13,16 @@ function memoryStorage() {
 }
 function mockClient({ rows = new Map(), userId = USER_A } = {}) {
   const calls = [];
-  const controller = { user: userId ? { id: userId, is_anonymous: false } : null, enabled: new Set([USER_A, USER_B]), failBefore: false, failAfter: false, hold: null, holdAuth: null, holdRead: null, callbacks: [], rows, calls };
+  const controller = { user: userId ? { id: userId, is_anonymous: false } : null, failBefore: false, failAfter: false, hold: null, holdAuth: null, holdRead: null, callbacks: [], rows, calls };
   const result = async query => {
     const actingId = controller.user?.id;
+    const actingAnonymous = controller.user?.is_anonymous;
     calls.push({ table: query.table, kind: query.kind, filters: { ...query.filters }, actingId, payload: query.payload && copy(query.payload) });
     if (query.table === 'tester_workspaces' && controller.hold) { const hold = controller.hold; controller.hold = null; await hold; }
     if (query.table === 'tester_workspaces' && query.kind === 'select' && controller.holdRead) { const hold = controller.holdRead; controller.holdRead = null; await hold; }
     if (query.table === 'tester_workspaces' && controller.failBefore) { controller.failBefore = false; return { data: null, error: { status: 503, message: 'Unavailable' } }; }
     const id = query.filters.user_id || query.payload?.user_id;
-    if (!actingId || actingId !== id) return { data: null, error: { code: '42501', message: 'RLS denied' } };
-    if (query.table === 'preview_testers') return { data: controller.enabled.has(id) ? { user_id: id, enabled: true } : null, error: null };
-    if (!controller.enabled.has(id)) return { data: null, error: { code: '42501', message: 'Tester membership denied' } };
+    if (!actingId || actingAnonymous || actingId !== id) return { data: null, error: { code: '42501', message: 'RLS denied' } };
     const existing = rows.get(id);
     let row = existing;
     if (query.kind === 'insert') {
@@ -45,7 +44,7 @@ function mockClient({ rows = new Map(), userId = USER_A } = {}) {
       onAuthStateChange: callback => { controller.callbacks.push(callback); return { data: { subscription: { unsubscribe() { controller.callbacks = controller.callbacks.filter(c => c !== callback); } } } }; }
     },
     from(table) {
-      assert.ok(['tester_workspaces', 'preview_testers'].includes(table));
+      assert.equal(table, 'tester_workspaces');
       const query = { table, kind: 'select', filters: {}, payload: null };
       const builder = {
         select() { return builder; },
@@ -237,17 +236,13 @@ test('late responses after sign-out cannot restore or acknowledge the old accoun
   assert.equal(cloud.getStatus().version, null);
 });
 
-test('membership is required even for a valid non-anonymous authenticated account', async () => {
+test('every verified non-anonymous account can use its own workspace without an invite lookup', async () => {
   const { client, controller } = mockClient();
-  controller.enabled.delete(USER_A);
   const cloud = workspace(client);
-  await assert.rejects(cloud.load(), { code: 'TESTER_REQUIRED' });
-  assert.equal(controller.calls.some(call => call.table === 'tester_workspaces'), false);
-  controller.enabled.add(USER_A);
   await cloud.load(); await cloud.save(data('authorised'));
-  controller.enabled.delete(USER_A);
-  await assert.rejects(cloud.save(data('revoked')), { code: 'TESTER_REQUIRED' });
   assert.equal(controller.rows.get(USER_A).snapshot.note, 'authorised');
+  assert.equal(controller.calls.every(call => call.table === 'tester_workspaces'), true);
+  assert.equal(controller.calls.every(call => (call.filters.user_id || call.payload?.user_id) === USER_A), true);
 });
 
 test('an account change during the initial auth lookup never restores the previous tester state', async () => {

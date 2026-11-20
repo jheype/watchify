@@ -36,7 +36,7 @@
     const salesOpen = () => m.sales.filter(s => s.status !== 'completed');
     const initials = () => m.profile.nickname.trim().split(/\s+/).slice(0, 2).map(s => s[0] || '').join('').toUpperCase() || 'JA';
     const currentDraft = () => state.sellDraft ? { ...m.draft, ...((state.sell.liveMode ? state.sell.identity : byId(state.sell.watchId)) || {}), ...(state.sell.liveMode && state.sell.photos[0]?.url ? {image:state.sell.photos[0].url} : {}), id: 'your-saved-draft', saved: true, liveDraft: state.sell.liveMode === true } : !m.draft.complete ? m.draft : null;
-    const listingMoney = (w, amount = w.price) => w.photoAssessment || w.liveDraft ? new Intl.NumberFormat('en-GB', {style:'currency',currency:'GBP',maximumFractionDigits:2}).format(amount) + ' GBP' : money(amount);
+    const listingMoney = (w, amount = w.price) => w.photoAssessment || w.assessmentMode === 'manual' || w.liveDraft ? new Intl.NumberFormat('en-GB', {style:'currency',currency:'GBP',maximumFractionDigits:2}).format(amount) + ' GBP' : money(amount);
     const counts = () => ({ listings: own().filter(w => w.status === 'active').length, reviews: own().filter(w => w.status === 'pending_review').length, offers: actionableOffers().length, sales: salesOpen().length, purchases: state.activity.length, drafts: currentDraft() ? 1 : 0 });
     const empty = (title, copy, link = '#explore', label = 'Browse watches') => `<div class="member-empty"><span class="member-empty-symbol">${icon('watch')}</span><h3>${esc(title)}</h3><p>${esc(copy)}</p><a class="btn outline small" href="${esc(link)}">${esc(label)} ${icon('arrow', 'small')}</a></div>`;
     const watchThumb = (w, subtitle = '') => `<div class="member-watch"><img src="${esc(w.image)}" alt="" width="68" height="76"><div><span class="member-watch-brand">${esc(w.brand || '')}</span><strong>${esc(w.model || w.title)}</strong><small>${esc(subtitle || w.reference || '')}</small></div></div>`;
@@ -46,7 +46,7 @@
     const rerender = () => ctx.render();
     const polishingLabel = w => ({ unpolished: 'Not polished', polished: 'Polished', unknown: 'Polishing unknown' }[w.polishing] || 'Polishing not disclosed');
     const wearLabel = w => ({ unworn: 'Declared unworn', worn: 'Previously worn', unknown: 'Wear history unknown' }[w.wearHistory] || 'Wear history not disclosed');
-    const listingCondition = w => `<span>${esc(w.condition)} <span class="member-declared-tag">Seller-declared</span></span><small>${w.box && w.papers ? 'Box & papers' : w.box ? 'Box only' : w.papers ? 'Papers only' : 'Watch only'}</small><small class="member-declaration-detail">${esc(polishingLabel(w))} · ${esc(wearLabel(w))}</small>`;
+    const listingCondition = w => `<span>${esc(w.condition)} <span class="member-declared-tag">${w.assessmentMode==='manual'?'Seller-declared · Not AI verified':'Seller-declared'}</span></span><small>${w.box && w.papers ? 'Box & papers' : w.box ? 'Box only' : w.papers ? 'Papers only' : 'Watch only'}</small><small class="member-declaration-detail">${esc(polishingLabel(w))} · ${esc(wearLabel(w))}</small>`;
 
     function sidebar(section) {
       const c = counts();
@@ -263,8 +263,8 @@
       if (!w || w.owned !== true) return;
       m.draft.complete = true;
       state.sellDraft = false;
-      m.listingFilter = 'pending_review';
-      setNotice('Your ' + w.brand + ' ' + w.model + ' submission is awaiting inspection.');
+      m.listingFilter = w.status === 'active' ? 'active' : 'pending_review';
+      setNotice('Your ' + w.brand + ' ' + w.model + (w.assessmentMode === 'manual' ? ' listing is published in your test workspace. Seller-declared, not AI verified.' : ' submission is awaiting inspection.'));
     }
 
     const handleChange = event => extensions.some(extension=>extension.handleChange?.(event));

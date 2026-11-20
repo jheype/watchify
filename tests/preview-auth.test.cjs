@@ -15,15 +15,32 @@ const settle = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(
 function setup(options = {}) {
   const nodes = new Map(), timers = new Map(), intervals = new Map(), downloads = [], urls = new Map();
   const listeners = new Map(), windowListeners = new Map(), authListeners = new Set();
-  let nextTimer = 0, currentUser = USER_A, reloads = 0, confirmations = 0, captureCalls = 0;
+  let nextTimer = 0, currentUser = options.initialUser === undefined ? USER_A : options.initialUser, reloads = 0, confirmations = 0, captureCalls = 0;
+  const authCalls = [], clientOptions = [], historyChanges = [];
+  const unescape = text => text.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   class Element {
-    constructor(tag = 'div') { this.tagName = tag; this.listeners = new Map(); this.dataset = {}; this.hidden = false; this.inert = false; this.disabled = false; this.textContent = ''; }
+    constructor(tag = 'div') { this.tagName = tag; this.listeners = new Map(); this.dataset = {}; this.hidden = false; this.inert = false; this.disabled = false; this.textContent = ''; this.value = ''; this.children = []; this.fields = []; }
     set id(value) { this._id = value; nodes.set(value, this); }
     get id() { return this._id; }
-    set innerHTML(value) { this._html = value; for (const match of value.matchAll(/\bid="([^"]+)"/g)) { const child = new Element(); child.id = match[1]; } }
+    set innerHTML(value) {
+      for (const child of this.children) if (nodes.get(child.id) === child) nodes.delete(child.id);
+      this.children = []; this._html = value;
+      let form;
+      for (const match of value.matchAll(/<([a-z][a-z0-9-]*)\b([^>]*\bid="([^"]+)"[^>]*)>/g)) {
+        const child = new Element(match[1]); child.id = match[3]; this.children.push(child);
+        const fieldValue = match[2].match(/\bvalue="([^"]*)"/); child.value = fieldValue ? unescape(fieldValue[1]) : '';
+        child.required = /\brequired\b/.test(match[2]);
+        const following = value.slice(match.index + match[0].length), end = following.indexOf('</' + match[1] + '>');
+        if (end !== -1) child.textContent = unescape(following.slice(0, end).replace(/<[^>]*>/g, ''));
+        if (child.tagName === 'form') form = child;
+        if (child.tagName === 'input' && form) form.fields.push(child);
+      }
+    }
     get innerHTML() { return this._html || ''; }
     addEventListener(type, fn) { if (!this.listeners.has(type)) this.listeners.set(type, []); this.listeners.get(type).push(fn); }
-    async emit(type, event = {}) { for (const fn of this.listeners.get(type) || []) await fn({ target: this, ...event }); }
+    async emit(type, event = {}) { for (const fn of this.listeners.get(type) || []) await fn({ target: this, preventDefault() {}, stopPropagation() {}, ...event }); }
+    reportValidity() { return this.fields.every(field => !field.required || field.value); }
+    reset() { for (const field of this.fields) field.value = ''; }
     closest() { return null; }
     setAttribute() {}
     insertBefore() {}
@@ -40,12 +57,28 @@ function setup(options = {}) {
     createElement: tag => new Element(tag),
     addEventListener(type, fn) { if (!listeners.has(type)) listeners.set(type, []); listeners.get(type).push(fn); }
   };
+  const sessionFor = account => account ? { user: account, access_token: 'fixture-access-token', refresh_token: 'fixture-refresh-token' } : null;
+  const signedIn = result => { if (!result.error && result.data?.session) switchUser(result.data.session.user); return result; };
   const client = { auth: {
-    getSession: async () => ({ data: { session: currentUser ? { user: currentUser } : null }, error: null }),
-    getUser: async () => ({ data: { user: currentUser }, error: null }),
+    getSession: async () => ({ data: { session: sessionFor(currentUser) }, error: null }),
+    getUser: async () => options.getUser ? options.getUser(currentUser) : { data: { user: currentUser }, error: null },
     onAuthStateChange(fn) { authListeners.add(fn); return { data: { subscription: { unsubscribe() { authListeners.delete(fn); } } } }; },
-    async signOut() { if (options.signOut) return options.signOut(); switchUser(null); return { error: null }; }
+    async signOut() { if (options.signOut) return options.signOut(); switchUser(null); return { error: null }; },
+    async signInWithPassword(args) { authCalls.push({ method: 'signIn', args: copy(args) }); return signedIn(options.signIn ? await options.signIn(args) : { data: { user: USER_A, session: sessionFor(USER_A) }, error: null }); },
+    async signUp(args) { authCalls.push({ method: 'signUp', args: copy(args) }); return signedIn(options.signUp ? await options.signUp(args) : { data: { user: USER_A, session: null }, error: null }); },
+    async resetPasswordForEmail(email, args) { authCalls.push({ method: 'reset', email, args: copy(args) }); return options.reset ? options.reset(email, args) : { data: {}, error: null }; },
+    async resend(args) { authCalls.push({ method: 'resend', args: copy(args) }); return options.resend ? options.resend(args) : { data: {}, error: null }; },
+    async exchangeCodeForSession(code) { authCalls.push({ method: 'exchange', code }); return signedIn(options.exchange ? await options.exchange(code) : { data: { user: USER_A, session: sessionFor(USER_A), redirectType: null }, error: null }); },
+    async updateUser() { throw new Error('Password changes must use the recovery-bound client.'); }
   } };
+  const makeRecoveryClient = () => {
+    const account = currentUser;
+    return { auth: {
+      async setSession() { authCalls.push({ method: 'recoverySession', accountId: account?.id }); return { data: { user: account, session: sessionFor(account) }, error: null }; },
+      async getUser() { return { data: { user: account }, error: null }; },
+      async updateUser(args) { authCalls.push({ method: 'updatePassword', accountId: account?.id }); return options.updatePassword ? options.updatePassword(args, account) : { data: { user: account }, error: null }; }
+    } };
+  };
   function switchUser(next) { currentUser = next; for (const fn of authListeners) fn(next ? 'SIGNED_IN' : 'SIGNED_OUT', next ? { user: next } : null); }
   const cloud = {
     pending: copy(options.pending || null), remote: copy(options.remote || null), status: { state: 'idle', userId: USER_A.id, pending: false },
@@ -78,17 +111,19 @@ function setup(options = {}) {
   class BrowserURL extends URL {}
   BrowserURL.createObjectURL = blob => { const url = 'blob:test/' + urls.size; urls.set(url, blob); return url; };
   BrowserURL.revokeObjectURL = url => urls.delete(url);
+  const location = new BrowserURL(options.url || 'https://watchify.example/');
+  location.reload = () => { reloads++; };
   const context = {
     WATCHIFY_CONFIG: { mode: 'zeit-preview', supabaseUrl: 'https://watchifytestproject.supabase.co', supabasePublishableKey: 'sb_publishable_fixture_only' },
-    supabase: { createClient: () => client },
+    supabase: { createClient: (_url, _key, settings) => { clientOptions.push(copy(settings.auth)); return settings.auth.persistSession ? client : makeRecoveryClient(); } },
     WatchifyCloudWorkspace: { create({ onStatus }) { cloud.onStatus = onStatus; return cloud; } },
     WatchifyWorkspaceSnapshot: {
       async capture(state) { captureCalls++; return options.capture ? options.capture(state) : { note: state.note }; },
       async captureBackup(state) { return options.backup ? options.backup(state) : { note: state.note }; },
       restore(state, snapshot) { Object.assign(state, copy(snapshot)); }
     },
-    document, Blob, URL: BrowserURL, AbortController,
-    location: { reload() { reloads++; } },
+    document, Blob, URL: BrowserURL, URLSearchParams, AbortController, location,
+    history: { replaceState(_state, _unused, url) { historyChanges.push(url); location.href = new BrowserURL(url, location.href).href; } },
     confirm() { confirmations++; return options.confirm !== false; },
     setTimeout(fn, ms) { const id = ++nextTimer; timers.set(id, { fn, ms }); return id; },
     clearTimeout(id) { timers.delete(id); },
@@ -99,7 +134,7 @@ function setup(options = {}) {
   context.window = context;
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/preview-auth.js'), 'utf8'), context);
   return {
-    api: context.WatchifyPreview, nodes, cloud, downloads, switchUser,
+    api: context.WatchifyPreview, nodes, cloud, downloads, switchUser, authCalls, clientOptions, location, historyChanges,
     get reloads() { return reloads; }, get confirmations() { return confirmations; }, get captureCalls() { return captureCalls; },
     async runTimer(ms) { const entry = [...timers.entries()].find(([, timer]) => timer.ms === ms); assert.ok(entry, `Expected a ${ms}ms timer`); timers.delete(entry[0]); return entry[1].fn(); },
     async emit(type) { for (const fn of listeners.get(type) || []) await fn({ target: new Element() }); },
@@ -108,6 +143,150 @@ function setup(options = {}) {
 }
 
 async function open(h, state = { note: 'default seed' }) { assert.equal(await h.api.authenticate(), true); await h.api.restoreWorkspace(state); h.api.startSync(); return state; }
+
+async function submitAuth(h, { email = USER_A.email, password = 'fixture password only', confirm = password } = {}) {
+  h.nodes.get('preview-auth-email').value = email;
+  if (h.nodes.has('preview-auth-password')) h.nodes.get('preview-auth-password').value = password;
+  if (h.nodes.has('preview-auth-confirm')) h.nodes.get('preview-auth-confirm').value = confirm;
+  await h.nodes.get('preview-login').emit('submit'); await settle();
+}
+const fixtureSession = account => ({ user: account, access_token: 'fixture-access-token', refresh_token: 'fixture-refresh-token' });
+async function waitForNode(h, id) { for (let i = 0; i < 20 && !h.nodes.has(id); i++) await settle(); assert.ok(h.nodes.has(id), 'Expected UI element ' + id); }
+
+test('public signup without a session requests confirmation and never opens a workspace', async () => {
+  const h = setup({ initialUser: null });
+  let authenticated = false;
+  const opening = h.api.authenticate().then(value => { authenticated = value; return value; }); await settle();
+  await h.nodes.get('preview-create-account').emit('click');
+  await submitAuth(h);
+  assert.equal(h.authCalls[0].method, 'signUp');
+  assert.equal(h.authCalls[0].args.options.emailRedirectTo, 'https://watchify.example/');
+  assert.match(h.nodes.get('preview-auth-message').textContent, /confirmation email has been requested/);
+  assert.equal(h.nodes.has('preview-auth-confirm'), false);
+  assert.equal(authenticated, false);
+  assert.equal(h.cloud.loads.length, 0);
+  await submitAuth(h); assert.equal(await opening, true);
+});
+
+test('signup can continue only when a returned session is verified with getUser', async () => {
+  let checked = 0;
+  const h = setup({ initialUser: null, signUp: async () => ({ data: { session: fixtureSession(USER_A), user: USER_A }, error: null }), getUser: async account => { checked++; return { data: { user: account }, error: null }; } });
+  const opening = h.api.authenticate(); await settle();
+  await h.nodes.get('preview-create-account').emit('click'); await submitAuth(h);
+  assert.equal(await opening, true);
+  assert.equal(checked, 1);
+});
+
+test('signup rejects a mismatched or short password before making a request', async () => {
+  const h = setup({ initialUser: null }); void h.api.authenticate(); await settle();
+  await h.nodes.get('preview-create-account').emit('click');
+  await submitAuth(h, { confirm: 'different fixture password' });
+  assert.match(h.nodes.get('preview-login-error').textContent, /do not match/);
+  await submitAuth(h, { password: 'short' });
+  assert.match(h.nodes.get('preview-login-error').textContent, /at least 12/);
+  assert.equal(h.authCalls.length, 0);
+});
+
+test('email delivery failures and rate limits remain errors instead of confirmation success', async t => {
+  for (const [code, message] of [['email_address_not_authorized', /delivery is not available/], ['over_email_send_rate_limit', /sending limit/], ['signup_disabled', /registration is currently unavailable/]]) {
+    await t.test(code, async () => {
+      const h = setup({ initialUser: null, signUp: async () => ({ data: null, error: { code } }) });
+      void h.api.authenticate(); await settle();
+      await h.nodes.get('preview-create-account').emit('click'); await submitAuth(h);
+      assert.match(h.nodes.get('preview-login-error').textContent, message);
+      assert.equal(h.nodes.get('preview-auth-message').textContent, '');
+      assert.equal(h.cloud.loads.length, 0);
+    });
+  }
+});
+
+test('unconfirmed sign-in offers a confirmation request without claiming delivery', async () => {
+  const h = setup({ initialUser: null, signIn: async () => ({ data: null, error: { code: 'email_not_confirmed' } }) });
+  void h.api.authenticate(); await settle(); await submitAuth(h);
+  assert.match(h.nodes.get('preview-login-error').textContent, /Confirm your email/);
+  await h.nodes.get('preview-resend-confirmation').emit('click'); await submitAuth(h);
+  const request = h.authCalls.find(call => call.method === 'resend');
+  assert.equal(request.args.email, USER_A.email);
+  assert.equal(request.args.type, 'signup');
+  assert.match(h.nodes.get('preview-auth-message').textContent, /has been requested/);
+  assert.equal(h.cloud.loads.length, 0);
+});
+
+test('reset requests use a same-origin clean return URL and do not reveal account existence', async () => {
+  const h = setup({ initialUser: null, url: 'https://watchify.example/index.html?returnTo=https://untrusted.example/#account' });
+  void h.api.authenticate(); await settle();
+  await h.nodes.get('preview-forgot-password').emit('click'); await submitAuth(h);
+  const request = h.authCalls.find(call => call.method === 'reset');
+  assert.equal(request.args.redirectTo, 'https://watchify.example/index.html');
+  assert.match(h.nodes.get('preview-auth-message').textContent, /If an account exists/);
+  assert.equal(h.cloud.loads.length, 0);
+});
+
+test('a confirmation callback exchanges PKCE code, verifies the user and removes callback parameters', async () => {
+  const h = setup({ initialUser: null, url: 'https://watchify.example/?code=fixture-confirm-code&sb_flow_id=fixture-flow#account' });
+  assert.equal(await h.api.authenticate(), true);
+  assert.equal(h.authCalls[0].method, 'exchange');
+  assert.equal(h.location.href, 'https://watchify.example/#account');
+  assert.equal(h.clientOptions[0].flowType, 'pkce');
+  assert.equal(h.clientOptions[0].detectSessionInUrl, false);
+});
+
+test('expired or unsupported links display only a safe error and scrub callback credentials', async () => {
+  const h = setup({ initialUser: null, url: 'https://watchify.example/?error=access_denied&error_description=untrusted-provider-text#access_token=fixture-untrusted-token&refresh_token=fixture-refresh' });
+  void h.api.authenticate(); await settle();
+  assert.match(h.nodes.get('preview-auth-message').textContent, /could not finish sign-in/);
+  assert.doesNotMatch(h.nodes.get('main').innerHTML, /untrusted-provider|fixture-untrusted-token/);
+  assert.equal(h.location.href, 'https://watchify.example/');
+  assert.equal(h.authCalls.length, 0);
+  assert.equal(h.cloud.loads.length, 0);
+});
+
+test('a URL claiming to be password recovery cannot authorize a password update', async () => {
+  const h = setup({ url: 'https://watchify.example/?auth=reset&type=recovery' });
+  assert.equal(await h.api.authenticate(), true);
+  assert.equal(h.nodes.has('preview-reset-password'), false);
+  assert.equal(h.authCalls.length, 0);
+  assert.equal(h.clientOptions.length, 1);
+});
+
+test('verified recovery updates the link account with an isolated client and then asks for sign-in', async () => {
+  const h = setup({ initialUser: null, url: 'https://watchify.example/?code=fixture-recovery-code', exchange: async () => ({ data: { user: USER_A, session: fixtureSession(USER_A), redirectType: 'recovery' }, error: null }) });
+  let authenticated = false;
+  const opening = h.api.authenticate().then(result => { authenticated = result; return result; }); await waitForNode(h, 'preview-new-password');
+  h.nodes.get('preview-new-password').value = 'new fixture password';
+  h.nodes.get('preview-confirm-password').value = 'new fixture password';
+  await h.nodes.get('preview-reset-password').emit('submit'); await settle();
+  assert.deepEqual(h.authCalls.find(call => call.method === 'updatePassword'), { method: 'updatePassword', accountId: USER_A.id });
+  assert.equal(h.clientOptions[1].persistSession, false);
+  assert.equal(h.clientOptions[1].autoRefreshToken, false);
+  assert.match(h.nodes.get('preview-auth-message').textContent, /password has been updated/);
+  assert.equal(authenticated, false);
+  await submitAuth(h); assert.equal(await opening, true);
+});
+
+test('a different account signing in before password reset stops the update', async () => {
+  const h = setup({ initialUser: null, url: 'https://watchify.example/?code=fixture-recovery-code', exchange: async () => ({ data: { user: USER_A, session: fixtureSession(USER_A), redirectType: 'recovery' }, error: null }) });
+  void h.api.authenticate(); await waitForNode(h, 'preview-new-password');
+  h.switchUser(USER_B);
+  h.nodes.get('preview-new-password').value = 'new fixture password';
+  h.nodes.get('preview-confirm-password').value = 'new fixture password';
+  await h.nodes.get('preview-reset-password').emit('submit');
+  assert.match(h.nodes.get('preview-reset-error').textContent, /account changed/);
+  assert.equal(h.authCalls.some(call => call.method === 'updatePassword'), false);
+});
+
+test('a concurrent account change cannot retarget an in-flight password update', async () => {
+  const updating = deferred();
+  const h = setup({ initialUser: null, url: 'https://watchify.example/?code=fixture-recovery-code', exchange: async () => ({ data: { user: USER_A, session: fixtureSession(USER_A), redirectType: 'recovery' }, error: null }), updatePassword: async (_args, account) => { await updating.promise; return { data: { user: account }, error: null }; } });
+  void h.api.authenticate(); await waitForNode(h, 'preview-new-password');
+  h.nodes.get('preview-new-password').value = 'new fixture password';
+  h.nodes.get('preview-confirm-password').value = 'new fixture password';
+  const submitted = h.nodes.get('preview-reset-password').emit('submit'); await settle();
+  h.switchUser(USER_B); updating.resolve(); await submitted; await settle();
+  assert.deepEqual(h.authCalls.find(call => call.method === 'updatePassword'), { method: 'updatePassword', accountId: USER_A.id });
+  assert.match(h.nodes.get('preview-auth-message').textContent, /Sign in with your new password/);
+  assert.equal(h.cloud.loads.length, 0);
+});
 
 test('a recovered local draft is retried before it can be reported as saved', async () => {
   const h = setup({ remote: { note: 'old remote' }, pending: { note: 'recovered edit' } });

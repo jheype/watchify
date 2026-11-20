@@ -1,4 +1,4 @@
-/* Hosted test access and cloud-save lifecycle. Local integrations keep their existing path. */
+/* Hosted account access and cloud-save lifecycle. Local integrations keep their existing path. */
 (function attachPreview(root) {
   'use strict';
   const config = root.WATCHIFY_CONFIG;
@@ -8,6 +8,7 @@
   let client, user, cloud, state, lastSaved = null, timer, interval, working = null, observedAccountId = null;
   let dirty = false, changedWhileSaving = false, stopped = false, loaded = false, reopening = false, locked = false;
   let captureError = null, currentStatus = { state: 'idle' };
+  let authObserved = false;
   const busy = () => Boolean(state?.uploadBusy || state?.sell?.busy || state?.syncBusy);
   const differentAccount = () => Boolean(observedAccountId && observedAccountId !== user?.id);
   const sessionChanged = () => Object.assign(new Error('The signed-in account changed.'), { code: 'AUTH_CHANGED' });
@@ -43,8 +44,17 @@
   }
   function safeMessage(error, fallback) {
     if (error?.code === 'invalid_credentials') return 'The email or password is incorrect.';
-    if (error?.code === 'email_not_confirmed') return 'This test account has not been activated. Ask João to activate your account.';
+    if (error?.code === 'email_not_confirmed') return 'Confirm your email before signing in. Check your inbox or choose Resend confirmation below.';
+    if (error?.code === 'email_address_not_authorized') return 'Email delivery is not available for this address yet. The site owner needs to finish setting up confirmation and recovery emails. Please try again later.';
+    if (error?.code === 'over_email_send_rate_limit') return 'The email service has reached its sending limit. Wait before requesting another email.';
     if (error?.status === 429 || error?.code === 'over_request_rate_limit') return 'Too many attempts. Please wait a moment and try again.';
+    if (error?.code === 'signup_disabled') return 'New account registration is currently unavailable. Please try again later.';
+    if (error?.code === 'weak_password') return 'Choose a stronger password with at least 12 characters. Avoid common or reused passwords.';
+    if (error?.code === 'same_password') return 'Choose a password different from your current password.';
+    if (error?.code === 'email_address_invalid') return 'Enter a valid email address.';
+    if (['user_already_exists', 'email_exists'].includes(error?.code)) return 'If you already have an account, sign in or reset your password.';
+    if (error?.code === 'AUTH_CHANGED') return 'The signed-in account changed. Return to sign-in and try again.';
+    if (error?.code === 'AUTH_REQUIRED') return 'Sign in with an email and password account to continue.';
     return fallback;
   }
   async function fetchWithTimeout(input, init = {}) {
@@ -55,27 +65,130 @@
     try { return await fetch(input, { ...init, signal: controller.signal }); }
     finally { clearTimeout(timeout); init.signal?.removeEventListener('abort', abort); }
   }
-  function loginForm() {
-    gate('<span class="preview-kicker">Zeit preview · Watchify 6.4.1</span><h1>A closer look at Watchify.</h1><p>Sign in with your individual test account to explore the site and save your changes.</p><form id="preview-login" class="preview-form"><label>Email<input name="email" type="email" autocomplete="username" maxlength="254" required></label><label>Password<input name="password" type="password" autocomplete="current-password" maxlength="256" required></label><p class="preview-error" id="preview-login-error" role="alert"></p><button class="btn primary full" type="submit">Enter Watchify</button></form><p class="preview-note">Ask João for your test account. Each person has a separate workspace. Orders, messages and payments use sample data; no purchases or payments are made.</p>');
+  function authOptions(persistent = true) {
+    return {
+      auth: { persistSession: persistent, autoRefreshToken: persistent, detectSessionInUrl: false, flowType: 'pkce', storageKey: 'watchify-auth-' + new URL(config.supabaseUrl).hostname + (persistent ? '' : '-recovery') },
+      global: { fetch: fetchWithTimeout }
+    };
+  }
+  function emailReturnUrl() {
+    const here = new URL(location.href);
+    return here.origin + here.pathname;
+  }
+  async function verifiedUser(expectedId) {
+    const result = await client.auth.getUser();
+    if (result.error) throw result.error;
+    const account = result.data?.user;
+    if (!account?.id || account.is_anonymous) throw Object.assign(new Error('A signed-in account is required.'), { code: 'AUTH_REQUIRED' });
+    if ((expectedId && account.id !== expectedId) || (authObserved && observedAccountId !== account.id)) throw sessionChanged();
+    return account;
+  }
+  function loginForm(notice = '') {
     return new Promise(resolve => {
-      const form = element('preview-login');
+      let rendering = 0;
+      function render(mode = 'signin', email = '', message = '') {
+        const version = ++rendering;
+        const signup = mode === 'signup', password = signup || mode === 'signin';
+        const titles = { signin: 'A closer look at Watchify.', signup: 'Create your Watchify account.', reset: 'Reset your password.', resend: 'Confirm your email.' };
+        const descriptions = { signin: 'Sign in to explore Watchify and save changes to your own workspace.', signup: 'Register with your email and password. Confirm your email to start using your account.', reset: 'Enter your email to request a password reset link.', resend: 'Request another confirmation link for your email address.' };
+        const actions = { signin: 'Enter Watchify', signup: 'Create account', reset: 'Request reset link', resend: 'Resend confirmation' };
+        const links = mode === 'signin' ? '<button id="preview-create-account" type="button">Create account</button><button id="preview-forgot-password" type="button">Forgot password?</button><button id="preview-resend-confirmation" type="button">Resend confirmation</button>' : '<button id="preview-back-signin" type="button">Back to sign in</button>';
+        gate('<span class="preview-kicker">Watchify 6.4.2 · Preview</span><h1>' + titles[mode] + '</h1><p>' + descriptions[mode] + '</p><p class="preview-message" id="preview-auth-message" role="status">' + esc(message) + '</p><form id="preview-login" class="preview-form"><label>Email<input id="preview-auth-email" name="email" type="email" autocomplete="username" maxlength="254" value="' + esc(email) + '" required></label>' + (password ? '<label>Password<input id="preview-auth-password" name="password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" ' + (signup ? 'minlength="12" ' : '') + 'maxlength="256" required></label>' : '') + (signup ? '<p class="preview-password-help">Use at least 12 characters.</p><label>Confirm password<input id="preview-auth-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>' : '') + '<p class="preview-error" id="preview-login-error" role="alert"></p><button id="preview-auth-submit" class="btn primary full" type="submit">' + actions[mode] + '</button></form><nav class="preview-auth-links" aria-label="Account access">' + links + '</nav><p class="preview-note">Each account has a separate workspace. Orders, messages and payments use sample data; no purchases or payments are made.</p>');
+        const form = element('preview-login'), button = element('preview-auth-submit'), errorText = element('preview-login-error');
+        const navigate = next => { if (!button.disabled) render(next, element('preview-auth-email').value.trim()); };
+        element('preview-create-account')?.addEventListener('click', () => navigate('signup'));
+        element('preview-forgot-password')?.addEventListener('click', () => navigate('reset'));
+        element('preview-resend-confirmation')?.addEventListener('click', () => navigate('resend'));
+        element('preview-back-signin')?.addEventListener('click', () => navigate('signin'));
+        form.addEventListener('submit', async event => {
+          event.preventDefault(); event.stopPropagation();
+          if (button.disabled || !form.reportValidity()) return;
+          const address = element('preview-auth-email').value.trim();
+          const secret = password ? element('preview-auth-password').value : '';
+          errorText.textContent = '';
+          if (signup && secret !== element('preview-auth-confirm').value) { errorText.textContent = 'The passwords do not match.'; return; }
+          if (signup && secret.length < 12) { errorText.textContent = 'Use a password with at least 12 characters.'; return; }
+          button.disabled = true; button.textContent = 'Please wait…';
+          try {
+            let result;
+            if (mode === 'signin') result = await client.auth.signInWithPassword({ email: address, password: secret });
+            else if (signup) result = await client.auth.signUp({ email: address, password: secret, options: { emailRedirectTo: emailReturnUrl() } });
+            else if (mode === 'reset') result = await client.auth.resetPasswordForEmail(address, { redirectTo: emailReturnUrl() });
+            else result = await client.auth.resend({ type: 'signup', email: address, options: { emailRedirectTo: emailReturnUrl() } });
+            if (result.error) throw result.error;
+            if (mode === 'signin' || (signup && result.data?.session)) {
+              if (!result.data?.session?.user?.id) throw Object.assign(new Error('Missing session'), { code: 'AUTH_REQUIRED' });
+              const account = await verifiedUser(result.data.session.user.id);
+              form.reset(); resolve(account); return;
+            }
+            // A user object without a session can be obfuscated for an existing
+            // address. It never grants access or proves that an email arrived.
+            const feedback = mode === 'reset'
+              ? 'If an account exists for this email, a reset message has been requested. Check your inbox and spam folder. Open the newest link in this same browser.'
+              : 'If this address needs confirmation, a confirmation email has been requested. Check your inbox and spam folder. Open the newest link in this same browser, then sign in.';
+            render('signin', address, feedback);
+          } catch (error) {
+            if (version === rendering) errorText.textContent = safeMessage(error, mode === 'signin' ? 'Sign-in could not be completed. Check your connection and try again.' : 'The request could not be completed. Check your connection and try again.');
+          } finally { if (version === rendering) { button.disabled = false; button.textContent = actions[mode]; } }
+        });
+      }
+      render('signin', '', notice);
+    });
+  }
+  async function resetPasswordForm(session, account) {
+    // Bind the update to the session in the recovery link. A different account
+    // signing in in another tab must never become the updateUser target.
+    const recoveryClient = root.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, authOptions(false));
+    const seeded = await recoveryClient.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
+    if (seeded.error) throw seeded.error;
+    const verified = await recoveryClient.auth.getUser();
+    if (verified.error || verified.data?.user?.id !== account.id || verified.data.user.is_anonymous) throw verified.error || sessionChanged();
+    gate('<span class="preview-kicker">Watchify account</span><h1>Choose a new password.</h1><p>Set a password with at least 12 characters for the account in your reset link.</p><form id="preview-reset-password" class="preview-form"><label>New password<input id="preview-new-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><label>Confirm new password<input id="preview-confirm-password" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><p id="preview-reset-error" class="preview-error" role="alert"></p><button id="preview-reset-submit" class="btn primary full" type="submit">Save new password</button></form><nav class="preview-auth-links"><button id="preview-reset-cancel" type="button">Back to sign in</button></nav>');
+    return new Promise(resolve => {
+      const form = element('preview-reset-password'), button = element('preview-reset-submit'), cancel = element('preview-reset-cancel');
+      cancel.addEventListener('click', () => { if (!button.disabled) { form.reset(); resolve('Sign in to continue. Your password has not been changed.'); } });
       form.addEventListener('submit', async event => {
         event.preventDefault(); event.stopPropagation();
-        const button = form.querySelector('button');
         if (button.disabled || !form.reportValidity()) return;
-        const data = new FormData(form);
-        button.disabled = true; button.textContent = 'Signing in…'; element('preview-login-error').textContent = '';
+        const password = element('preview-new-password').value;
+        const errorText = element('preview-reset-error'); errorText.textContent = '';
+        if (password.length < 12) { errorText.textContent = 'Use a password with at least 12 characters.'; return; }
+        if (password !== element('preview-confirm-password').value) { errorText.textContent = 'The passwords do not match.'; return; }
+        if (authObserved && observedAccountId !== account.id) { errorText.textContent = safeMessage(sessionChanged()); return; }
+        button.disabled = true; cancel.disabled = true; button.textContent = 'Saving password…';
         try {
-          const result = await client.auth.signInWithPassword({ email: String(data.get('email')).trim(), password: String(data.get('password')) });
+          const result = await recoveryClient.auth.updateUser({ password });
           if (result.error) throw result.error;
-          const verified = await client.auth.getUser();
-          if (verified.error || !verified.data?.user) throw verified.error || new Error('Missing user');
-          form.reset(); resolve(verified.data.user);
-        } catch (error) {
-          element('preview-login-error').textContent = safeMessage(error, 'Sign-in could not be completed. Check your connection and try again.');
-        } finally { button.disabled = false; button.textContent = 'Enter Watchify'; }
+          if (result.data?.user?.id !== account.id) throw sessionChanged();
+          form.reset(); resolve('Your password has been updated. Sign in with your new password to continue.');
+        } catch (error) { errorText.textContent = safeMessage(error, 'The password could not be updated. Try again or request a new reset link.'); }
+        finally { button.disabled = false; cancel.disabled = false; button.textContent = 'Save new password'; }
       });
     });
+  }
+  async function emailCallback() {
+    const url = new URL(location.href), fragment = new URLSearchParams(url.hash.slice(1));
+    const code = url.searchParams.get('code');
+    const hasError = url.searchParams.has('error') || fragment.has('error');
+    const hasTokens = fragment.has('access_token') || fragment.has('refresh_token');
+    if (!code && !hasError && !hasTokens) return null;
+    const cleanUrl = () => {
+      for (const key of ['code', 'sb_flow_id', 'error', 'error_code', 'error_description', 'access_token', 'refresh_token']) url.searchParams.delete(key);
+      if (hasError || hasTokens) url.hash = '';
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    };
+    try {
+      if (!code || hasError || hasTokens) throw new Error('Unsupported or expired email link');
+      const result = await client.auth.exchangeCodeForSession(code);
+      if (result.error) throw result.error;
+      if (!result.data?.session?.user?.id) throw new Error('Missing callback session');
+      cleanUrl();
+      const account = await verifiedUser(result.data.session.user.id);
+      if (result.data.redirectType === 'recovery') return { notice: await resetPasswordForm(result.data.session, account) };
+      return { account };
+    } catch (_) {
+      return { notice: 'This email link could not finish sign-in. It may have expired or been opened in a different browser. Try signing in; if needed, request a new confirmation or reset link in this browser.' };
+    } finally { cleanUrl(); }
   }
   async function retryGate(title, text) {
     gate('<span class="preview-kicker">Zeit preview</span><h1>' + esc(title) + '</h1><p>' + esc(text) + '</p><button id="preview-retry-load" class="btn primary full">Try again</button>');
@@ -87,27 +200,29 @@
       waiting('Setup is incomplete.', 'The test environment needs its account connection. Please contact João.');
       return false;
     }
-    client = root.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: 'pkce', storageKey: 'watchify-auth-' + new URL(config.supabaseUrl).hostname },
-      global: { fetch: fetchWithTimeout }
-    });
-    while (!user) {
-      const session = await client.auth.getSession();
-      if (session.error) { await retryGate('Sign-in could not be checked.', 'Your saved work has not been changed. Check your connection and try again.'); continue; }
-      if (!session.data.session) { user = await loginForm(); break; }
-      const verified = await client.auth.getUser();
-      if (verified.data?.user && !verified.error) user = verified.data.user;
-      else if (verified.error?.status === 401 || verified.error?.status === 403 || verified.error?.name === 'AuthSessionMissingError') {
-        await client.auth.signOut({ scope: 'local' }); user = await loginForm();
-      } else await retryGate('Sign-in could not be checked.', 'Your saved work has not been changed. Check your connection and try again.');
-    }
-    observedAccountId = user.id;
+    client = root.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, authOptions());
     client.auth.onAuthStateChange((_event, session) => {
+      authObserved = true;
       observedAccountId = session?.user?.id || null;
       updateLockExport();
       if (stopped || !user) return;
-      if (!session || session.user?.id !== user.id) stopForSessionChange();
+      if (!session || session.user?.is_anonymous || session.user?.id !== user.id) stopForSessionChange();
     });
+    const callback = await emailCallback();
+    if (callback?.account) user = callback.account;
+    else if (callback?.notice) user = await loginForm(callback.notice);
+    while (!user) {
+      const session = await client.auth.getSession();
+      if (session.error) { await retryGate('Sign-in could not be checked.', 'Your saved work has not been changed. Check your connection and try again.'); continue; }
+      if (!session.data.session || session.data.session.user?.is_anonymous) { user = await loginForm(); break; }
+      try { user = await verifiedUser(session.data.session.user?.id); }
+      catch (error) {
+        if (error?.status === 401 || error?.status === 403 || error?.name === 'AuthSessionMissingError' || ['AUTH_REQUIRED', 'AUTH_CHANGED'].includes(error?.code)) user = await loginForm(safeMessage(error, 'Sign in again to continue.'));
+        else await retryGate('Sign-in could not be checked.', 'Your saved work has not been changed. Check your connection and try again.');
+      }
+    }
+    if (authObserved && observedAccountId !== user.id) stopForSessionChange();
+    else observedAccountId = user.id;
     return !stopped;
   }
   async function restoreWorkspace(target) {
@@ -132,7 +247,7 @@
         return;
       } catch (error) {
         if (stopped || error?.code === 'AUTH_CHANGED') { stopForSessionChange(); throw sessionChanged(); }
-        await retryGate('Your workspace could not be loaded.', 'Your cloud data has not been replaced. Check your connection or ask João to check your test account, then try again.');
+        await retryGate('Your workspace could not be loaded.', 'Your cloud data has not been replaced. Check your connection, then try again.');
       }
     }
   }
@@ -282,8 +397,8 @@
     loaded = true; interval = setInterval(() => { if (!document.hidden && !working && !stopped) void flush(); }, 6000); schedule();
   }
   function securityPage() {
-    return '<div class="preview-security"><a href="#account" class="text-link">Back to My Watchify</a><h1>Your test account.</h1><p class="preview-help">Your sign-in and saved workspace are connected. Each tester has their own account.</p><section><dl><div><dt>Signed in as</dt><dd class="preview-account-email">' + esc(user?.email) + '</dd></div><div><dt>Saved changes</dt><dd>Private to this account</dd></div><div><dt>Password and access</dt><dd>Managed by the test administrator</dd></div></dl><p class="preview-help">Ask João if you need a new password. Self-service password changes and MFA setup are not available in this test release.</p></section><p class="preview-help">The marketplace uses sample listings, messages and orders. Uploaded test data is saved to your workspace. Please use sample information during testing.</p></div>';
+    return '<div class="preview-security"><a href="#account" class="text-link">Back to My Watchify</a><h1>Your account.</h1><p class="preview-help">Your sign-in and saved workspace are connected. Each account has its own workspace.</p><section><dl><div><dt>Signed in as</dt><dd class="preview-account-email">' + esc(user?.email) + '</dd></div><div><dt>Saved changes</dt><dd>Private to this account</dd></div><div><dt>Password recovery</dt><dd>Available from the sign-in screen</dd></div></dl><p class="preview-help">To reset your password, sign out after saving, then choose Forgot password? Open the newest reset email in the same browser. Email delivery must be available for your address. MFA setup is not available in this release.</p></section><p class="preview-help">The marketplace uses sample listings, messages and orders. Uploaded test data is saved to your workspace. Please use sample information during testing.</p></div>';
   }
   function fatal() { waiting('Watchify could not be opened.', 'Your saved cloud workspace has not been replaced. Reload this page or ask João to check the test environment.'); }
-  root.WatchifyPreview = Object.freeze({ authenticate, restoreWorkspace, startSync, securityPage, fatal });
+  root.WatchifyPreview = Object.freeze({ authenticate, restoreWorkspace, startSync, securityPage, fatal, assertActive: assertCurrentWorkspace });
 })(globalThis);

@@ -1,0 +1,67 @@
+{
+  "release": "6.4.2",
+  "project_ref": "iqfsalmepkcjawyukiie",
+  "organisation": "TripApp",
+  "observed_at_utc": "2026-11-20T20:24:44.235156+00:00",
+  "migration": {
+    "status": "applied",
+    "version": "20261120200953",
+    "name": "allow_public_authenticated_workspaces",
+    "file": "supabase/migrations/20261120200953_allow_public_authenticated_workspaces.sql",
+    "application_response": {
+      "success": true
+    },
+    "history_independently_confirmed": true
+  },
+  "hosted_role_rls_tests": {
+    "status": "interrupted_no_result",
+    "test_file": "supabase/tests/public_account_rls.sql",
+    "checks_defined": 24,
+    "checks_passed": null,
+    "elapsed_before_interruption_seconds": 749.3,
+    "completion_observed": false,
+    "scope": "SQL role and RLS assertions with synthetic claim settings. The request returned no assertion results. Do not mark these checks as passed."
+  },
+  "post_interruption_state": {
+    "sql_statement_timeout_seconds": 5,
+    "can_read_all_stats": true,
+    "pending_validation_sessions": [],
+    "minimal_fixture_users": 0,
+    "minimal_fixture_memberships": 0,
+    "minimal_fixture_workspaces": 0,
+    "snapshot_fixture_markers": 0,
+    "scope": "Independent observation after interruption. No pending matching validation session or visible minimal synthetic fixture was found; not proof of assertion completion."
+  },
+  "post_migration_advisors": {
+    "security_findings": 0,
+    "performance_findings": 0
+  },
+  "auth_settings": {
+    "observed_at_utc": "2026-11-20T20:08:17.223Z",
+    "http_status": 200,
+    "email_enabled": true,
+    "disable_signup": false,
+    "mailer_autoconfirm": false,
+    "anonymous_users": false,
+    "phone_enabled": false
+  },
+  "remaining_checks": [
+    "24 hosted role/RLS assertions did not complete observably",
+    "External confirmation/recovery email delivery",
+    "Final hosted Site URL and redirect configuration",
+    "Public signup and confirmation",
+    "Password sign-in and recovery",
+    "Authenticated PostgREST JWT and two-account isolation through final deployed browser"
+  ],
+  "smtp": {
+    "configured_by_this_change": false,
+    "external_delivery_verified": false,
+    "requirement": "Custom SMTP or a Send Email hook backed by a configured email provider. Built-in delivery is restricted to organisation team addresses. Email confirmation remains enabled."
+  },
+  "trip_project_modified": false,
+  "official_docs": [
+    "https://supabase.com/docs/guides/auth/auth-smtp",
+    "https://supabase.com/docs/guides/auth/testing-auth-flows",
+    "https://supabase.com/docs/guides/auth/redirect-urls"
+  ]
+}

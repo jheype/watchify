@@ -1,0 +1,12 @@
+.env
+.env.*
+.git/
+.vercel/
+.watchify-build-*/
+node_modules/
+dist/
+server/
+tests/
+docs/
+coverage/
+*.log

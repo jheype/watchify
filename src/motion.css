@@ -1,0 +1,235 @@
+/* Watchify interaction layer. Motion confirms an action; it never gates content. */
+:root {
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+  --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+  --motion-press: 120ms;
+  --motion-state: 180ms;
+  --motion-dialog: 200ms;
+  --focus-color: #173b4c;
+}
+
+.viewing-room, .sell-step-rail, .member-sidebar { --focus-color: #e9f4fa; }
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+button, [role="button"], .btn, .sell-button, .chip, .tab {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Catalog results and repeat visits remain immediately readable. */
+.page, .home-page, .premium-home, .signature-home, .commerce-home,
+.watch-card, .watch-grid, .sell-stage-body, .member-page {
+  animation: none !important;
+}
+
+.watch-card, .watch-card:hover {
+  transform: none !important;
+  transition-property: border-color, background-color !important;
+}
+
+.watch-photo img, .signature-photo img, .signature-note img,
+.premium-feature-image > img, .shop-intro-image img, .featured-piece > img {
+  transition: none !important;
+}
+
+.watch-card:hover .watch-photo img, .signature-photo:hover img,
+.signature-note:hover img, .premium-feature:hover .premium-feature-image > img,
+.shop-intro-image:hover img, .featured-piece:hover > img {
+  transform: none !important;
+}
+
+/* Named properties also prevent old transition: all declarations from leaking in. */
+:is(button, [role="button"], .btn, .sell-button, .card-view, .signature-primary,
+  .signature-secondary, .member-nav a, .gallery-thumbs button) {
+  transition-property: transform, opacity, background-color, border-color, color !important;
+  transition-duration: var(--motion-press);
+  transition-timing-function: var(--ease-out);
+}
+
+:is(input, textarea, select, .sell-dropzone, .sell-declaration-option,
+  .sell-accessory-row, .sell-ai-candidate, .global-search) {
+  transition-property: border-color, background-color, box-shadow !important;
+  transition-duration: var(--motion-state);
+  transition-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+:is(button, [role="button"], .btn, .sell-button, .card-view, .signature-primary,
+  .signature-secondary):not(:disabled):not([aria-disabled="true"]):not(.sell-progress button):active {
+  transform: scale(.97) !important;
+  transition-duration: var(--motion-press);
+}
+}
+
+:is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-color) !important;
+  outline-offset: 4px;
+}
+
+:is(.sell-field, .member-field, .field) :is(input, textarea, select):focus {
+  border-color: var(--focus-color);
+}
+
+.global-search:focus-within {
+  border-color: var(--focus-color);
+  box-shadow: 0 0 0 2px #173b4c14;
+}
+
+.member-preference input:focus-visible + .member-switch {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 4px;
+}
+
+/* The native dialog keeps focus management and a centered, quiet entrance. */
+#modal {
+  transform-origin: center;
+  max-height: min(90dvh, 960px);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+#modal[open] {
+  animation: none !important;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity var(--motion-dialog) var(--ease-out),
+    transform var(--motion-dialog) var(--ease-out);
+}
+
+#modal::backdrop {
+  background: rgb(12 29 38 / .42);
+  opacity: 1;
+  transition: opacity var(--motion-dialog) var(--ease-out);
+}
+
+@starting-style {
+  #modal[open] { opacity: 0; transform: scale(.97); }
+  #modal[open]::backdrop { opacity: 0; }
+}
+
+/* A transition retargets smoothly when another action updates the same toast. */
+#toast {
+  top: auto;
+  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left: auto;
+  padding: 15px 19px;
+  max-width: min(380px, calc(100vw - 48px));
+  background: #173b4c;
+  color: #fff;
+  border: 1px solid #ffffff1f;
+  border-radius: 4px;
+  box-shadow: 0 8px 28px #173b4c1a;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--motion-state) var(--ease-out),
+    transform var(--motion-state) var(--ease-out);
+}
+
+#toast.show {
+  padding: 15px 19px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pointer-only affordances must not linger after a tap. */
+@media (hover: hover) and (pointer: fine) {
+  .btn.primary:hover:not(:disabled),
+  .sell-button-primary:hover:not(:disabled),
+  .sell-upload-button:hover:not(:disabled),
+  .member-content .btn.primary:hover,
+  .member-modal .btn.primary:hover {
+    background: #244f63;
+    border-color: #244f63;
+  }
+
+  .icon-btn:hover { background: #eef2f3; }
+  .favourite:not(.saved):hover { color: #173b4c; }
+  .favourite.saved:hover { background: #173b4c; color: #fff; }
+  .gallery-thumbs button:hover { border-color: #718b98; }
+}
+
+@media (hover: none), (pointer: coarse) {
+  input, textarea, select,
+  .global-search input, .catalogue-search input,
+  .sell-field :is(input, select, textarea), .member-field :is(input, select) {
+    font-size: 16px;
+  }
+
+  .btn.primary:hover:not(:disabled),
+  .sell-button-primary:hover:not(:disabled),
+  .sell-upload-button:hover:not(:disabled),
+  .member-content .btn.primary:hover,
+  .member-modal .btn.primary:hover {
+    background: var(--ink, #173b4c);
+    border-color: var(--ink, #173b4c);
+  }
+
+  .btn.outline:hover, .member-content .btn.outline:hover,
+  .member-modal .btn.outline:hover, .sell-button-secondary:hover:not(:disabled) {
+    background: #fff;
+    border-color: var(--line);
+  }
+
+  .icon-btn:hover { background: transparent; }
+  .favourite:not(.saved):hover { color: var(--muted); }
+  .gallery-thumbs button:not(.active):hover { border-color: transparent; }
+  .signature-sell-bottom > a:hover > span { transform: none; }
+}
+
+@media (max-width: 760px) {
+  #toast {
+    right: 16px;
+    left: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    max-width: none;
+  }
+}
+
+/* Keyboard actions are immediate; no extra wait for a tab, control or dialog. */
+html[data-input-method="keyboard"] :is(button, a, input, select, textarea, #modal[open], #toast),
+html[data-input-method="keyboard"] #modal::backdrop {
+  transition-duration: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  :is(button, a, [role="button"], .btn, .sell-button):active,
+  #modal[open], #toast, #toast.show {
+    transform: none !important;
+  }
+
+  #modal[open], #modal::backdrop, #toast {
+    transition-property: opacity !important;
+    transition-duration: 120ms !important;
+    transition-timing-function: ease !important;
+  }
+
+  .signature-sell-bottom > a:hover > span { transform: none !important; }
+
+  html[data-input-method="keyboard"] :is(#modal[open], #toast),
+  html[data-input-method="keyboard"] #modal::backdrop {
+    transition-duration: 0ms !important;
+  }
+}
+
+/* Stable step geometry: press feedback must never move a circle off its track. */
+.sell-progress button:active { transform: none !important; }
+.sell-step-number { transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease; }
+.room-cta,.room-sell,.room-watch-action a { transition: background-color 160ms ease, color 160ms ease, transform 120ms var(--ease-out); }
+.room-cta:active,.room-watch-action a:active { transform: scale(.98); }
+.gallery-main img { transition: transform 220ms var(--ease-out); }
+.gallery-thumbs button { transition: border-color 160ms ease, background-color 160ms ease; }
+.sell-declaration-option,.sell-accessory-row { transition: background-color 160ms ease, border-color 160ms ease; }
+@media(prefers-reduced-motion:reduce){
+  .gallery-main img,.room-cta,.room-sell,.room-watch-action a,.sell-step-number { transition: none; }
+  .room-cta:active,.room-watch-action a:active { transform:none; }
+}
+html[data-input-method="keyboard"] .gallery-main img { transition:none; }

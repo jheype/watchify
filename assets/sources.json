@@ -1,0 +1,273 @@
+{
+  "purpose": "Private Watchify design prototype. Photographs are reference imagery, not photos of inventory offered for sale.",
+  "licensing": "Third-party brand and retailer product photographs retain their original copyright. No commercial redistribution licence was verified. Replace these references with authorised dealer-owned listing photographs, or obtain permission, before any public launch. No brand endorsement is implied. Prices, condition and seller data in the prototype must not be attributed to source retailers.",
+  "processing": "Local WebP variants were resized and compressed only; watch appearance was not generated or modified.",
+  "assets": [
+    {
+      "files": [
+        "submariner.webp"
+      ],
+      "subject": "Rolex Submariner Date 126610LN",
+      "source_page": "https://wristaficionado.com/collections/mens-sport-watches",
+      "image_url": "https://wristaficionado.com/cdn/shop/collections/RolexSubmariner126610LN_01_c31914f8-c64e-431f-b08a-cb063d4ae847.jpg?crop=center&height=1200&v=1736783171&width=1200",
+      "credit": "Wrist Aficionado; photographer unspecified"
+    },
+    {
+      "files": [
+        "santos.webp"
+      ],
+      "subject": "Cartier Santos WSSA0010",
+      "source_page": "https://www.swisswatchexpo.com/watches/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965/",
+      "image_url": "https://cdn.swisswatchexpo.com/productphotos/7/11/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965_e141086751.jpg",
+      "credit": "SwissWatchExpo"
+    },
+    {
+      "files": [
+        "speedmaster.webp"
+      ],
+      "subject": "Omega Speedmaster Moonwatch 310.30.42.50.01.002",
+      "source_page": "https://luxehouze.com/sg/en/product/watch/omega-speedmaster-moonwatch-31030425001002-black-dial-bracelet-sg",
+      "image_url": "https://assets.luxehouze.com/images/assets/products/1754670972-39-OME-Speedmaster-M-2905d764.jpg",
+      "credit": "Luxehouze; photographer unspecified"
+    },
+    {
+      "files": [
+        "gmt-pepsi.webp"
+      ],
+      "subject": "Rolex GMT-Master II 126710BLRO",
+      "source_page": "https://firstclasstimepieces.com/products/copy-of-rolex-sea-dweller-mens-2",
+      "image_url": "https://firstclasstimepieces.com/cdn/shop/products/rolex-gmt-master-ii-pepsi-40mm-126710blro-black-dial-first-class-timepieces_1080x.jpg?v=1589439358",
+      "credit": "First Class Timepieces"
+    },
+    {
+      "files": [
+        "datejust.webp"
+      ],
+      "subject": "Rolex Datejust 41 126334 green dial",
+      "source_page": "https://time4diamonds.com/products/rolex-datejust-41-oystersteel-and-white-gold-green-dial-126334",
+      "image_url": "https://time4diamonds.com/cdn/shop/files/rolex-datejust-41-oystersteel-and-white-gold-green-dial-126334-2.webp?v=1754586671&width=1200",
+      "credit": "Time 4 Diamonds"
+    },
+    {
+      "files": [
+        "black-bay.webp"
+      ],
+      "subject": "Tudor Black Bay Fifty-Eight 79030N",
+      "source_page": "https://www.chronext.de/magazin/baselworld/tudor-black-bay-58-das-universalgenie-der-baselworld-2018",
+      "image_url": "https://images.ctfassets.net/a9wd67qru8w4/3kSNLsgSth8nL85OQTI2OP/3acdf26fa291aba57ecfeb48d03ea73c/Tudor-Baselworld-2018-Fifty-Eight-2.jpg?fl=progressive&fm=jpg&q=85&w=1000",
+      "credit": "CHRONEXT / Tudor; photographer unspecified"
+    },
+    {
+      "files": [
+        "royal-oak.webp"
+      ],
+      "subject": "Audemars Piguet Royal Oak 15400ST blue dial",
+      "source_page": "https://omniluxe.id/products/audemars-piguet-royal-oak-41mm-15400-blue-dial-2012",
+      "image_url": "https://omniluxe.id/cdn/shop/files/15400Blue-3_1800x.jpg?v=1736931746",
+      "credit": "Omniluxe"
+    },
+    {
+      "files": [
+        "cartier-tank.webp"
+      ],
+      "subject": "Cartier Tank Must WSTA0041",
+      "source_page": "https://www.newcavendishjewellers.com/products/wsta0041-cartier-tank-must-de-cartier-large-model",
+      "image_url": "https://www.newcavendishjewellers.com/cdn/shop/files/crwsta0041_2_3.png?v=1759272742&width=1200",
+      "credit": "New Cavendish Jewellers / Cartier"
+    },
+    {
+      "files": [
+        "hero-rolex.webp"
+      ],
+      "subject": "Rolex Submariner 124060 editorial macro (no date)",
+      "source_page": "https://www.rolex.com/watches/submariner",
+      "image_url": "https://content.rolex.com/v7/dam/collection/family-pages/professional-watches/submariner/top-navigation/professional-watches-submariner-navigation-a-key-to-the-deep_m124060-0001_2001dh_001.jpg?imwidth=1920",
+      "credit": "Rolex"
+    },
+    {
+      "files": [
+        "submariner-detail.webp"
+      ],
+      "subject": "Rolex Submariner Date 126610LN editorial macro",
+      "source_page": "https://gc-yukizaki.jp/i/w265321",
+      "image_url": "https://ec-image.gc-yukizaki.jp/1000/w265321-25.jpg",
+      "credit": "Yukizaki"
+    },
+    {
+      "files": [
+        "hero.webp"
+      ],
+      "subject": "Mechanical watch with leather strap; editorial only, model unverified",
+      "source_page": "https://images.unsplash.com/photo-1524805444758-089113d48a6d",
+      "image_url": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=1600&q=88",
+      "credit": "Unsplash contributor; identity not verified",
+      "licence_note": "Unsplash-hosted reference; verify originating photo and rights before publishing"
+    },
+    {
+      "files": [
+        "santos-dial.webp"
+      ],
+      "subject": "Cartier Santos WSSA0010 dial close-up",
+      "source_page": "https://www.swisswatchexpo.com/watches/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965/",
+      "image_url": "https://cdn.swisswatchexpo.com/productphotos/7/11/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965_08063.jpg",
+      "credit": "SwissWatchExpo"
+    },
+    {
+      "files": [
+        "santos-papers.webp"
+      ],
+      "subject": "Cartier Santos WSSA0010 original warranty card, dated 2018-12-10",
+      "source_page": "https://www.swisswatchexpo.com/watches/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965/",
+      "image_url": "https://cdn.swisswatchexpo.com/productphotos/7/11/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965_1508b.jpg",
+      "credit": "SwissWatchExpo"
+    },
+    {
+      "files": [
+        "santos-back.webp"
+      ],
+      "subject": "Cartier Santos WSSA0010 case back and bracelet",
+      "source_page": "https://www.swisswatchexpo.com/watches/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965/",
+      "image_url": "https://cdn.swisswatchexpo.com/productphotos/7/11/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965_770d2.jpg",
+      "credit": "SwissWatchExpo"
+    },
+    {
+      "files": [
+        "santos-box.webp"
+      ],
+      "subject": "Cartier Santos WSSA0010 original presentation box",
+      "source_page": "https://www.swisswatchexpo.com/watches/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965/",
+      "image_url": "https://cdn.swisswatchexpo.com/productphotos/7/11/cartier-santos-galbee-medium-steel-mens-watch-wssa0010-unworn-27965_32082.jpg",
+      "credit": "SwissWatchExpo"
+    },
+    {
+      "files": [
+        "datejust-dial.webp"
+      ],
+      "subject": "Rolex Datejust 41 126334 green dial macro",
+      "source_page": "https://time4diamonds.com/products/rolex-datejust-41-oystersteel-and-white-gold-green-dial-126334",
+      "image_url": "https://time4diamonds.com/cdn/shop/files/rolex-datejust-41-oystersteel-and-white-gold-green-dial-126334.webp?v=1754586671&width=1200",
+      "credit": "Time 4 Diamonds",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "speedmaster-angle.webp"
+      ],
+      "subject": "Omega Speedmaster Moonwatch front angle",
+      "source_page": "https://luxehouze.com/sg/en/product/watch/omega-speedmaster-moonwatch-31030425001002-black-dial-bracelet-sg",
+      "image_url": "https://assets.luxehouze.com/images/assets/products/1754670972-39-OME-Speedmaster-M-f81aca0a.jpg",
+      "credit": "Luxehouze",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "speedmaster-back.webp"
+      ],
+      "subject": "Omega Speedmaster Moonwatch display back; tag obscured by source",
+      "source_page": "https://luxehouze.com/sg/en/product/watch/omega-speedmaster-moonwatch-31030425001002-black-dial-bracelet-sg",
+      "image_url": "https://assets.luxehouze.com/images/assets/products/1754670973-39-OME-Speedmaster-M-356d9c81.jpg",
+      "credit": "Luxehouze",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "speedmaster-side.webp"
+      ],
+      "subject": "Omega Speedmaster Moonwatch crown and pushers",
+      "source_page": "https://luxehouze.com/sg/en/product/watch/omega-speedmaster-moonwatch-31030425001002-black-dial-bracelet-sg",
+      "image_url": "https://assets.luxehouze.com/images/assets/products/1754670973-39-OME-Speedmaster-M-7041c27c.jpg",
+      "credit": "Luxehouze",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "speedmaster-dial.webp"
+      ],
+      "subject": "Omega Speedmaster Moonwatch alternate front angle",
+      "source_page": "https://luxehouze.com/sg/en/product/watch/omega-speedmaster-moonwatch-31030425001002-black-dial-bracelet-sg",
+      "image_url": "https://assets.luxehouze.com/images/assets/products/1754670973-39-OME-Speedmaster-M-c2a87b88.jpg",
+      "credit": "Luxehouze",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "gmt-front.webp"
+      ],
+      "subject": "Rolex GMT-Master II 126710BLRO front on display cushion",
+      "source_page": "https://firstclasstimepieces.com/products/copy-of-rolex-sea-dweller-mens-2",
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/6306/3874/files/DSC05428.jpg?v=1717787934",
+      "credit": "First Class Timepieces",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "gmt-dial.webp"
+      ],
+      "subject": "Rolex GMT-Master II 126710BLRO dial angle",
+      "source_page": "https://firstclasstimepieces.com/products/copy-of-rolex-sea-dweller-mens-2",
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/6306/3874/files/DSC05429.jpg?v=1717787933",
+      "credit": "First Class Timepieces",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "gmt-side.webp"
+      ],
+      "subject": "Rolex GMT-Master II 126710BLRO side and bracelet",
+      "source_page": "https://firstclasstimepieces.com/products/copy-of-rolex-sea-dweller-mens-2",
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/6306/3874/files/DSC05430.jpg?v=1717787934",
+      "credit": "First Class Timepieces",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "gmt-bracelet.webp"
+      ],
+      "subject": "Rolex GMT-Master II 126710BLRO alternate side and bracelet",
+      "source_page": "https://firstclasstimepieces.com/products/copy-of-rolex-sea-dweller-mens-2",
+      "image_url": "https://cdn.shopify.com/s/files/1/0089/6306/3874/files/DSC05431.jpg?v=1717787934",
+      "credit": "First Class Timepieces",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "submariner-front.webp"
+      ],
+      "subject": "Rolex Submariner Date 126610LN 2023 front",
+      "source_page": "https://wristaficionado.com/products/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023",
+      "image_url": "https://cdn.shopify.com/s/files/1/0266/7141/5373/files/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023-rolex-1210513977.jpg?v=1765243664",
+      "credit": "Wrist Aficionado",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "submariner-wrist.webp"
+      ],
+      "subject": "Rolex Submariner Date 126610LN 2023 worn on wrist",
+      "source_page": "https://wristaficionado.com/products/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023",
+      "image_url": "https://cdn.shopify.com/s/files/1/0266/7141/5373/files/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023-rolex-1210513975.jpg?v=1765243652",
+      "credit": "Wrist Aficionado",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "submariner-lifestyle.webp"
+      ],
+      "subject": "Rolex Submariner Date 126610LN 2023 wrist and cuff",
+      "source_page": "https://wristaficionado.com/products/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023",
+      "image_url": "https://cdn.shopify.com/s/files/1/0266/7141/5373/files/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023-rolex-1210513976.jpg?v=1765243658",
+      "credit": "Wrist Aficionado",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    },
+    {
+      "files": [
+        "submariner-dial.webp"
+      ],
+      "subject": "Rolex Submariner Date 126610LN 2023 dial close-up",
+      "source_page": "https://wristaficionado.com/products/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023",
+      "image_url": "https://cdn.shopify.com/s/files/1/0266/7141/5373/files/rolex-submariner-date-126610ln-stainless-steel-black-dial-2023-rolex-1210513970.jpg?v=1765243646",
+      "credit": "Wrist Aficionado",
+      "note": "All additional images in this model gallery came from the same retailer product listing. Reference imagery only; no real inventory is being offered."
+    }
+  ]
+}

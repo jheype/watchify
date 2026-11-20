@@ -1,0 +1,388 @@
+{
+  "version": "6.4.0",
+  "date": "2026-11-14",
+  "baseArchive": "Watchify-6.3.1-completo-sem-trocas.zip",
+  "baseline": {
+    "tests": 290,
+    "passed": 258,
+    "failed": 32,
+    "failureNames": [
+      "verified identity and credentials persist privately; status never exposes tokens",
+      "invalid issuer, audience, nonce, expiry and subject cannot become a connected account",
+      "malformed ID token",
+      "unsigned header",
+      "missing key identifier",
+      "token-provided key URL",
+      "empty signing key set",
+      "null signing key entry",
+      "array signing key entry",
+      "unknown signing key",
+      "ambiguous signing keys",
+      "invalid signature",
+      "wrong issuer",
+      "wrong audience",
+      "expired token",
+      "token not active yet",
+      "missing required claim",
+      "invalid subject",
+      "future issued-at",
+      "wrong nonce",
+      "missing nonce",
+      "wrong authorised party",
+      "multiple audiences without authorised party",
+      "identity failures have safe, specific reasons and never persist rejected credentials",
+      "verified array audiences accept the selected client and require the matching authorised party when shared",
+      "an unfamiliar signing key refreshes the cached public keys before verification",
+      "identity-only consent cannot authorize inference",
+      "refresh is serialized and rotating credentials are stored together",
+      "revoked refresh drops local tokens, returns a safe reconnect error and retains registration",
+      "returning callbacks cannot replace the issued client or verified account identity",
+      "disconnect attempts remote revocation, clears credentials and keeps host/client identity",
+      "animated WebP and APNG are refused rather than using only their first frame"
+    ]
+  },
+  "updated": {
+    "tests": 341,
+    "passed": 309,
+    "failed": 32,
+    "failureNames": [
+      "verified identity and credentials persist privately; status never exposes tokens",
+      "invalid issuer, audience, nonce, expiry and subject cannot become a connected account",
+      "malformed ID token",
+      "unsigned header",
+      "missing key identifier",
+      "token-provided key URL",
+      "empty signing key set",
+      "null signing key entry",
+      "array signing key entry",
+      "unknown signing key",
+      "ambiguous signing keys",
+      "invalid signature",
+      "wrong issuer",
+      "wrong audience",
+      "expired token",
+      "token not active yet",
+      "missing required claim",
+      "invalid subject",
+      "future issued-at",
+      "wrong nonce",
+      "missing nonce",
+      "wrong authorised party",
+      "multiple audiences without authorised party",
+      "identity failures have safe, specific reasons and never persist rejected credentials",
+      "verified array audiences accept the selected client and require the matching authorised party when shared",
+      "an unfamiliar signing key refreshes the cached public keys before verification",
+      "identity-only consent cannot authorize inference",
+      "refresh is serialized and rotating credentials are stored together",
+      "revoked refresh drops local tokens, returns a safe reconnect error and retains registration",
+      "returning callbacks cannot replace the issued client or verified account identity",
+      "disconnect attempts remote revocation, clears credentials and keeps host/client identity",
+      "animated WebP and APNG are refused rather than using only their first frame"
+    ]
+  },
+  "newWristFitTests": {
+    "passed": 51,
+    "failed": 0
+  },
+  "syntax": "passed",
+  "newFailedTests": [],
+  "browser": {
+    "mode": "Offline Chromium DOM harness. Unmodified packaged JavaScript/CSS; image paths hydrated from local assets. Provider transport omitted. No live backend, CSP or production-provider verification claimed.",
+    "checks": [
+      {
+        "name": "No simulator button on catalogue or new top-level navigation",
+        "passed": true
+      },
+      {
+        "name": "Trade remains absent from the header",
+        "passed": true
+      },
+      {
+        "name": "Opening the listing exposes the contextual button",
+        "passed": true
+      },
+      {
+        "name": "Native modal opens",
+        "passed": true
+      },
+      {
+        "name": "Input receives initial focus",
+        "passed": true
+      },
+      {
+        "name": "No assumed starting wrist size",
+        "passed": true
+      },
+      {
+        "name": "Desktop dialog is short and rectangular",
+        "passed": true,
+        "details": {
+          "x": 330,
+          "y": 281.65625,
+          "width": 780,
+          "height": 436.6875
+        }
+      },
+      {
+        "name": "Comma decimal produces a live preview",
+        "passed": true
+      },
+      {
+        "name": "Uses the selected 41 mm Datejust listing",
+        "passed": true
+      },
+      {
+        "name": "Larger wrist reduces relative watch size",
+        "passed": true
+      },
+      {
+        "name": "Invalid input clears stale preview: 5.5",
+        "passed": true
+      },
+      {
+        "name": "Invalid input clears stale preview: -16",
+        "passed": true
+      },
+      {
+        "name": "Invalid input clears stale preview: 31",
+        "passed": true
+      },
+      {
+        "name": "Invalid input clears stale preview: 16cm",
+        "passed": true
+      },
+      {
+        "name": "Invalid input clears stale preview: 1e1",
+        "passed": true
+      },
+      {
+        "name": "Clearing input clears preview and error",
+        "passed": true
+      },
+      {
+        "name": "Submitting an empty field explains the missing measurement",
+        "passed": true
+      },
+      {
+        "name": "Valid input recovers from errors",
+        "passed": true
+      },
+      {
+        "name": "Input and rendering make no network requests",
+        "passed": true
+      },
+      {
+        "name": "Tab wraps to close instead of background",
+        "passed": true
+      },
+      {
+        "name": "Shift+Tab wraps to the input",
+        "passed": true
+      },
+      {
+        "name": "Escape closes and restores button focus",
+        "passed": true
+      },
+      {
+        "name": "Same-tab reopening retains only the last valid circumference",
+        "passed": true
+      },
+      {
+        "name": "Clicking inside does not close the modal",
+        "passed": true
+      },
+      {
+        "name": "Backdrop click closes",
+        "passed": true
+      },
+      {
+        "name": "Close control restores button focus",
+        "passed": true
+      },
+      {
+        "name": "Rapid close/reopen leaves live handlers working",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: submariner",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: santos",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: datejust",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: speedmaster",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: black-bay",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: gmt-pepsi",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: cartier-tank",
+        "passed": true
+      },
+      {
+        "name": "Tank uses 25.5 mm width and 33.7 mm height",
+        "passed": true
+      },
+      {
+        "name": "Selected watch data is fresh: royal-oak",
+        "passed": true
+      },
+      {
+        "name": "Existing offer modal still works without stale description",
+        "passed": true
+      },
+      {
+        "name": "Existing screen renders: #sell",
+        "passed": true
+      },
+      {
+        "name": "Existing screen renders: #account/listings",
+        "passed": true
+      },
+      {
+        "name": "Existing screen renders: #account/messages",
+        "passed": true
+      },
+      {
+        "name": "Existing screen renders: #account/orders",
+        "passed": true
+      },
+      {
+        "name": "Existing screen renders: #account/analytics",
+        "passed": true
+      },
+      {
+        "name": "Existing screen renders: #account/reviews",
+        "passed": true
+      },
+      {
+        "name": "Existing screen renders: #account/accounting",
+        "passed": true
+      },
+      {
+        "name": "No new app runtime or console errors",
+        "passed": true,
+        "details": {
+          "errors": [],
+          "console": []
+        }
+      },
+      {
+        "name": "New tab has no stored wrist measurement",
+        "passed": true
+      },
+      {
+        "name": "Missing case dimensions disable the entry without a fake size",
+        "passed": true
+      },
+      {
+        "name": "Modal stays inside 390×844 viewport",
+        "passed": true,
+        "details": {
+          "x": 12,
+          "y": 115.859375,
+          "width": 366,
+          "height": 612.265625
+        }
+      },
+      {
+        "name": "No horizontal modal or page overflow at 390 px",
+        "passed": true
+      },
+      {
+        "name": "Controls remain usable at 390 px",
+        "passed": true
+      },
+      {
+        "name": "Reduced-motion removes dialog animation at 390 px",
+        "passed": true
+      },
+      {
+        "name": "Modal stays inside 320×568 viewport",
+        "passed": true,
+        "details": {
+          "x": 12,
+          "y": 12,
+          "width": 296,
+          "height": 544
+        }
+      },
+      {
+        "name": "No horizontal modal or page overflow at 320 px",
+        "passed": true
+      },
+      {
+        "name": "Controls remain usable at 320 px",
+        "passed": true
+      },
+      {
+        "name": "Reduced-motion removes dialog animation at 320 px",
+        "passed": true
+      },
+      {
+        "name": "Modal stays inside 844×390 viewport",
+        "passed": true,
+        "details": {
+          "x": 32,
+          "y": 19.5,
+          "width": 780,
+          "height": 351
+        }
+      },
+      {
+        "name": "No horizontal modal or page overflow at 844 px",
+        "passed": true
+      },
+      {
+        "name": "Controls remain usable at 844 px",
+        "passed": true
+      },
+      {
+        "name": "Reduced-motion removes dialog animation at 844 px",
+        "passed": true
+      },
+      {
+        "name": "All browser checks ended without uncaught runtime errors",
+        "passed": true
+      }
+    ],
+    "count": 60,
+    "errors": [],
+    "consoleErrors": []
+  },
+  "httpChecks": {
+    "/src/wrist-fit.js": 200,
+    "/src/wrist-fit.css": 200,
+    "/.env": 404,
+    "/server/start.cjs": 404
+  },
+  "unchangedDependencies": {
+    "jose": "6.2.17",
+    "sharp": "0.35.5"
+  },
+  "environmentLimits": [
+    "The locked dependencies could not be installed in this environment. jose is missing; the global sharp used here is 0.34.1. The same 32 test failures were reproduced in the untouched input archive.",
+    "Managed Chromium blocks URL navigation. Browser UI was tested with offline mounting, not by bypassing its policy or claiming production/HTTP/CSP browser verification.",
+    "No live provider calls, physical fit validation, Safari/WebKit, physical mobile keyboard or payment verification."
+  ],
+  "sourceHashes": {
+    "src/app.js": "2ca1ef4f0c74a9fc76f227dd252d52649a23a8a6e3b893fe55afd199ad7cff03",
+    "src/data.js": "709dacd2d90ba141bb4a2dccfd926b8b50a315c1e907ab2d98ccce94938ada0c",
+    "src/wrist-fit.js": "0aa3220bee17a7a8ad30a0db080dcb24ee435e9ef54c72d0a2683496cff981d8",
+    "src/wrist-fit.css": "17e77dab3319084b783702c3d1ab40a3273694b6337860d0d9c00cad2c9ff909",
+    "index.html": "b531f3652c6fae7ad5992fcda70f2e4a938941dfde70ae1fbc71fa5a5da4ebab",
+    "tests/wrist-fit.test.cjs": "68eca6a78ce44e2a3f2a49b3579a003985cf90a0be444aa0c598fab3203e3d08"
+  }
+}

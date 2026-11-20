@@ -1,0 +1,32 @@
+{
+  "version": "6.3.1",
+  "checks_passed": 7,
+  "checks": [
+    "Desktop navigation contains Buy, Sell and My Watchify, without Trade links.",
+    "12 existing account, dealer, selling and watch-detail routes render without trade controls.",
+    "Cash-offer and purchase-reservation dialogs still open from watch details.",
+    "Four obsolete trade route variants display the existing not-found screen.",
+    "390px mobile menu opens without trade links; existing Messages navigation remains.",
+    "Homepage has no horizontal overflow at 320, 375, 390, 768, 1024 and 1440 CSS pixels.",
+    "No uncaught JavaScript exceptions during the offline UI checks."
+  ],
+  "browser_errors": [],
+  "limits": "Loopback navigation was blocked by browser policy. Shipped HTML/CSS/JS assembled offline with embedded existing images and live-api.js excluded. This verifies UI only, not HTTP/CSP/authentication, live providers, transactions, physical devices or deployment. The offline harness removes the CSP meta tag only in memory to load inline assets; the shipped CSP is unchanged.",
+  "syntax": "npm run check: passed",
+  "new_regression_tests": {
+    "passed": 7,
+    "failed": 0
+  },
+  "complete_suite": {
+    "tests": 290,
+    "passed": 258,
+    "failed": 32
+  },
+  "original_6_2_0_same_environment": {
+    "tests": 283,
+    "passed": 251,
+    "failed": 32,
+    "same_failing_test_names": true
+  },
+  "dependency_install": "npm ci failed with EAI_AGAIN resolving registry.npmjs.org. Locked dependency versions were not changed."
+}

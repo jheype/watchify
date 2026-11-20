@@ -1,0 +1,141 @@
+/* The same shop vocabulary, carried into selling, accounts and watch details. */
+.selling-page { --sell-ink:var(--ink); --sell-muted:#71767b; --sell-rule:var(--line); --sell-soft:var(--soft); --sell-copper:var(--accent); --sell-olive:#4b6555; }
+.sell-topbar { min-height:68px; border-bottom:0; }
+.sell-save-exit { gap:10px; padding:0 16px; border:1px solid var(--line); border-radius:24px; background:#fff; min-height:38px; }
+.sell-workspace { grid-template-columns:180px minmax(0,1fr); gap:24px; padding-top:5px; }
+.sell-step-rail { border:0; padding:22px 18px; border-radius:14px; background:#fff; min-height:0; top:105px; }
+.sell-rail-heading { padding:0 0 15px; }
+.sell-progress li > :is(button,div) { font-size:12px; }
+.sell-step-number { background:#f5f6f7; border-color:#dfe2e5; color:#7e8389; }
+.sell-progress .is-complete .sell-step-number { background:#f5ece7; border-color:#ebd4c8; color:var(--accent); }
+.sell-progress .is-complete > button { color:#595f63; }
+.sell-stage { padding:28px; border:1px solid var(--line); border-radius:16px; background:#fff; }
+.sell-stage-heading { margin-bottom:27px; }
+.sell-stage-heading h1 { font-weight:600; font-size:clamp(28px,2.5vw,36px); letter-spacing:-1.1px; margin-bottom:10px; }
+.sell-stage-heading p { font-size:13px; }
+.sell-button { border-radius:24px; }
+.sell-button-primary,.sell-upload-button { background:var(--ink); border-color:var(--ink); }
+.sell-button-primary:hover:not(:disabled),.sell-upload-button:hover { background:#3c4245; border-color:#3c4245; }
+.sell-button-secondary { background:#fff; border-color:var(--line); }
+.sell-photo-layout { gap:28px; grid-template-columns:minmax(0,1.45fr) minmax(220px,1fr); }
+.sell-dropzone { min-height:300px; border-color:#cbd0d5; background:#f7f8f9; border-radius:12px; }
+.sell-dropzone.dragover { background:#fbf1ec; border-color:var(--accent); }
+.sell-upload-mark,.sell-upload-copy p,.sell-file-formats { color:var(--sell-muted); }
+.sell-photo-image,.sell-guide-grid figure > div,.sell-review-photo,.sell-identity-photo { border-radius:12px; background:#f0f2f3; }
+.sell-cover-label { border-radius:12px; padding:5px 9px; }
+.sell-photo-guide,.sell-condition-guide { padding-left:23px; border-color:var(--line); }
+.sell-guide-heading h2 { font-weight:600; font-size:19px; letter-spacing:-.45px; }
+.sell-guide-heading p,.sell-guide-tip { font-size:11px; }
+.sell-field :is(input,select,textarea),.sell-manual-identity input { border:1px solid #dce0e3; border-radius:9px; background:#fafbfc; }
+.sell-field :is(input,select,textarea):focus,.sell-manual-identity input:focus { background:#fff; border-color:var(--accent); }
+.sell-price-input input { border:0; border-radius:0; background:transparent; }
+.sell-price-input input:focus { background:transparent; }
+.sell-photo-role select { border-radius:7px; border:1px solid var(--line); background:#fff; padding:0 8px; }
+.sell-declaration-option { background:#fafbfc; border-color:#dde1e5; border-radius:10px; }
+.sell-declaration-option:hover { border-color:#aeb5bb; }
+.sell-declaration-option:has(input:checked) { background:#fcf3ee; border-color:var(--accent); }
+.sell-declaration-option:has(input:checked) strong { color:var(--ink); }
+.sell-declaration-option input,.sell-confirmation input,.sell-accessory-row input { accent-color:var(--accent); }
+.sell-declaration-option small,.sell-confirmation small { color:var(--sell-muted); }
+.sell-condition-fields { gap:14px; }
+.sell-price-guidance { border:1px solid var(--line); border-radius:12px; padding:24px; background:#f7f8f9; }
+.sell-price-guidance-label,.sell-price-guidance > p,.sell-adjustments dt { color:var(--sell-muted); }
+.sell-price-guidance h2 { font-weight:600; }
+.sell-price-guidance > strong { color:var(--ink); }
+.sell-estimate-watch,.sell-adjustments { border-color:var(--line); }
+.sell-draft-banner { border-color:#ebd9cc; background:#fcf5f0; border-radius:10px; }
+.sell-connections { margin-bottom:28px; padding:22px; border:0; border-radius:12px; background:#f6f7f8; }
+.sell-connections-heading h2 { font-size:22px; letter-spacing:-.6px; }
+.sell-connection-line { border-color:#e2e5e8; }
+.sell-connection-line:last-child { padding-bottom:0; }
+.sell-connection-line .sell-button { background:#fff; border:1px solid #dce0e3; color:var(--ink); border-radius:22px; }
+.sell-ai-record { border:1px solid var(--line); border-radius:12px; background:#f8f9fa; padding:23px; }
+.sell-ai-record-head h2 { font-weight:600; }
+.sell-review-pill { border-color:#e5d5c9; background:#fff9f4; color:#805d43; border-radius:20px; text-transform:none; font-size:11px; letter-spacing:0; }
+.sell-ai-candidate { border-radius:10px; }
+.sell-step-actions { padding-top:22px; }
+
+.member-page { background:transparent; border-top:0; font-family:var(--sans); }
+.member-layout { grid-template-columns:220px minmax(0,1fr); gap:26px; padding-top:28px; }
+.member-sidebar { border:0; background:#fff; border-radius:14px; padding:22px 16px; top:105px; }
+.member-profile { padding:0 5px 18px; border-bottom:1px solid var(--line); margin-bottom:17px; }
+.member-avatar { background:#f7e9e2; color:var(--accent); }
+.member-nav a { border-radius:9px; color:#62686e; }
+.member-nav a:hover { background:#f5f6f7; }
+.member-nav a.is-current { background:var(--ink); color:#fff; }
+.member-nav a.is-current b { background:#ffffff24; color:#fff; }
+.member-nav b { background:#f0f2f3; color:#5f666c; border-radius:6px; }
+.member-sidebar-bottom { border-color:var(--line); }
+.member-heading h1 { font-weight:600; font-size:32px; letter-spacing:-.9px; }
+.member-panel { border:1px solid var(--line); border-radius:14px; }
+.member-panel-heading,.member-review-panel .member-panel-heading { background:#fff; border-color:var(--line); }
+.member-content .btn,.member-modal .btn { min-height:40px; border-radius:24px; padding-inline:17px; }
+.member-overview-line { border:0; background:#fff; border-radius:12px; padding:20px 22px; gap:26px; }
+.member-task:hover,.member-mini-list>a:hover,.member-review-list>a:hover { background:#fafbfc; }
+.member-task-icon,.member-connection-icon { border-color:var(--line); background:#f4f6f7; color:#68737b; border-radius:10px; }
+.member-watch img,.member-review-list .member-watch img { background:#f2f4f5; border-radius:9px; }
+.member-tabs button { border-radius:22px; padding:9px 15px; }
+.member-tabs button.is-current { background:var(--ink); border-color:var(--ink); color:#fff; }
+.member-tabs button>span { background:#eceff1; color:#626970; border-radius:10px; }
+.member-tabs button.is-current>span { background:#ffffff24; color:#fff; }
+.member-table thead,.member-draft-row,.member-offer-bottom,.member-sale-next,.member-purchase-top { background:#fafbfc; }
+.member-connection { border-color:var(--line); background:#fff; border-radius:14px; }
+.member-offer-message p { background:#f5f7f8; border-radius:9px; color:#687078; }
+.member-field :is(input,select,textarea) { background:#fafbfc; border-color:#dce0e3; border-radius:9px; }
+.member-status-pending_review { border-color:#ecdaca; background:#fff7ee; border-radius:16px; }
+
+.watch-detail-page .detail-layout { gap:28px; }
+.watch-detail-page .gallery-main { background:#eef0f2; border-radius:16px; }
+.watch-detail-page .gallery-thumbs button { background:#fff; border-radius:10px; }
+.watch-detail-page .detail-info { border:1px solid var(--line); padding:28px; border-radius:16px; background:#fff; }
+.watch-detail-page .detail-info h1 { font-weight:600; font-size:clamp(30px,3vw,43px); letter-spacing:-1.4px; }
+.watch-detail-page .detail-price { font-weight:600; }
+.watch-detail-page .badge.grey,.gallery-caption { border-radius:16px; }
+.watch-detail-page .detail-lower { margin-top:28px; padding-top:0; border:0; gap:24px; }
+.watch-detail-page .panel { padding:26px; background:#fff; border:1px solid var(--line); border-radius:14px; }
+.watch-detail-page .panel h2 { font-weight:600; font-size:23px; }
+.condition-dossier .insight-note { border-radius:9px; background:#f6f7f8; border:0; }
+.submission-notice { border-radius:12px; background:#fff; padding:21px 24px; }
+.inspection-note { border-radius:10px; background:#fafbfc; }
+dialog,dialog.wide { border-radius:16px; border-color:var(--line); }
+.modal-head h2 { font-weight:600; }
+.field :is(input,select),.option-card { border-radius:9px; }
+.modal-watch { background:#f3f5f6; border-radius:12px; }
+
+@media(max-width:1100px){
+  .sell-workspace { grid-template-columns:150px minmax(0,1fr); gap:18px; }
+  .sell-step-rail { padding:20px 13px; }
+  .sell-stage { padding:24px; }
+  .sell-photo-layout { grid-template-columns:minmax(0,1fr); gap:28px; }
+  .sell-photo-guide { padding:24px 0 0; border-left:0; border-top:1px solid var(--line); }
+  .sell-guide-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .member-layout { grid-template-columns:190px minmax(0,1fr); gap:22px; }
+}
+@media(max-width:760px){
+  .sell-workspace { display:block; padding-top:0; }
+  .sell-step-rail { position:static; margin-bottom:16px; padding:17px 16px; }
+  .sell-rail-heading { padding-bottom:14px; }
+  .sell-stage { padding:22px 18px; border-radius:14px; }
+  .sell-stage-heading h1 { font-size:29px; }
+  .sell-connections { padding:18px; }
+  .sell-connection-line>.sell-button { margin-left:0; }
+  .sell-dropzone { min-height:260px; }
+  .sell-guide-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .sell-condition-guide { padding-left:0; }
+  .member-layout { display:block; }
+  .member-sidebar { padding:10px; margin-bottom:22px; border-radius:12px; }
+  .member-nav { border:0; padding-bottom:0; margin:0; }
+  .member-nav a { border-radius:20px; }
+  .member-heading h1 { font-size:29px; }
+  .member-overview-line { padding:16px; gap:17px; }
+  .watch-detail-page .detail-info,.watch-detail-page .panel { padding:22px; }
+  .watch-detail-page .detail-layout,.watch-detail-page .detail-lower { gap:18px; }
+}
+@media(max-width:550px){
+  .sell-declaration-options { grid-template-columns:1fr; gap:8px; }
+  .sell-declaration-option { min-height:0; display:grid; grid-template-columns:20px minmax(0,1fr); align-items:start; gap:12px; padding:14px; }
+  .sell-declaration-option input { margin-top:2px; }
+  .sell-declaration-option strong { font-size:12px; }
+  .sell-declaration-option small { font-size:11px; margin-top:3px; }
+  .sell-ai-record { padding:18px; }
+}

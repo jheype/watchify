@@ -1,0 +1,145 @@
+{
+  "version": "6.4.1",
+  "source": {
+    "archive": "Watchify-6.4.0-completo-wrist-fit.zip",
+    "sha256": "776e6e48d94e1b1453e5fe51df37c5e89daa4870c4abc6e3d9ddf14b097590f7",
+    "date": "2026-11-14"
+  },
+  "node_tests": {
+    "tests": 378,
+    "pass": 378,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "syntax_check": "passed",
+  "static_build": {
+    "status": "passed",
+    "configuration": "real Watchify project URL and public publishable key",
+    "real_supabase_configuration": true,
+    "deployed_browser_connection_verified": false
+  },
+  "browser_check": {
+    "status": "not_completed",
+    "reason": "Local Chromium is blocked by the execution environment; deployed browser validation is pending."
+  },
+  "external_state": {
+    "github_repository": "https://github.com/jheype/watchify",
+    "github_visibility": "public",
+    "github_publication": "blocked: GitHub app installation has access only to trip",
+    "supabase_organization": "TripApp (agkymdcxgzyjdppxmqoz)",
+    "supabase_project": "Watchify (iqfsalmepkcjawyukiie); ACTIVE_HEALTHY; sa-east-1",
+    "migration_applied": true,
+    "vercel_deployment": "not created; team authorization required",
+    "trip_deletion": "pending authenticated dashboard access; Trip still present"
+  },
+  "database_local_validation": {
+    "engine": "@electric-sql/pglite@0.5.17",
+    "postgres": "PostgreSQL 18.7 (PGlite 0.5.17) on wasm32-unknown-emscripten, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a), 32-bit",
+    "migration": "supabase/migrations/20261120182505_create_private_tester_workspaces.sql",
+    "passed": 17,
+    "cases": [
+      "Exact repository migration compiles and applies",
+      "RLS enabled on both exposed tables",
+      "Anonymous role has no workspace or membership access",
+      "An authenticated non-member cannot write or enrol themselves",
+      "Enabled owner can create snapshot; metadata is generated on the server",
+      "An enabled owner cannot insert another user row",
+      "Each enabled tester reads only their own workspace and membership",
+      "Cross-user UPDATE affects zero rows",
+      "Owner compare-and-swap increments version and rejects stale versions",
+      "Client cannot change owner, version or timestamps, delete data or enable membership",
+      "Anonymous Auth session remains blocked even with an enabled user UUID",
+      "Missing user claim cannot read snapshots",
+      "Disabling membership revokes reads and writes without deleting the snapshot",
+      "Missing snapshot fields cannot bypass CHECK constraints through SQL NULL",
+      "Database enforces the serialized snapshot size limit",
+      "Metadata trigger also rejects owner reassignment by a privileged writer",
+      "No security-definer function or callable trigger is exposed to clients"
+    ],
+    "scope": "Local PostgreSQL engine with stubbed auth claim helpers and roles; not a hosted Supabase verification."
+  },
+  "hosted_public_api_validation": {
+    "project_ref": "iqfsalmepkcjawyukiie",
+    "auth_settings_status": 200,
+    "anonymous_auth_enabled": false,
+    "public_email_signup_disabled": false,
+    "email_confirmation_enabled": true,
+    "anonymous_workspace_read": {
+      "http_status": 401,
+      "code": "42501"
+    },
+    "anonymous_membership_read": {
+      "http_status": 401,
+      "code": "42501"
+    },
+    "scope": "Actual hosted Auth settings and PostgREST requests with the public publishable key. No password sign-in or deployed-browser workflow has been verified."
+  },
+  "hosted_database_validation": {
+    "status": "passed",
+    "observed_at_utc": "2026-11-20T18:31:36Z",
+    "project_ref": "iqfsalmepkcjawyukiie",
+    "organisation": "TripApp",
+    "passed": 20,
+    "cases": [
+      "anon_workspace_read_denied",
+      "anon_membership_read_denied",
+      "non_member_read_denied",
+      "non_member_insert_denied",
+      "self_enrolment_denied",
+      "owner_insert_and_server_metadata",
+      "cross_owner_insert_denied",
+      "tester_b_workspace_and_membership_isolation",
+      "tester_a_workspace_isolation",
+      "cross_owner_update_denied",
+      "owner_version_increment",
+      "stale_version_rejected",
+      "protected_columns_delete_and_membership_writes_denied",
+      "anonymous_auth_read_write_denied",
+      "missing_subject_read_denied",
+      "revoked_member_read_write_denied",
+      "revocation_preserves_snapshot",
+      "missing_snapshot_fields_rejected",
+      "privileged_owner_reassignment_rejected",
+      "no_exposed_security_definer"
+    ],
+    "test_file": "supabase/tests/private_preview_rls.sql",
+    "fixture_cleanup": {
+      "remaining_fixture_users": 0,
+      "remaining_fixture_memberships": 0,
+      "remaining_fixture_workspaces": 0
+    },
+    "security_advisor_findings": 0,
+    "performance_advisor_findings": 0,
+    "migration_history": [
+      {
+        "version": "20261120182505",
+        "name": "create_private_tester_workspaces",
+        "file": "supabase/migrations/20261120182505_create_private_tester_workspaces.sql"
+      },
+      {
+        "version": "20261120182836",
+        "name": "optimise_preview_auth_initplans",
+        "file": "supabase/migrations/20261120182836_optimise_preview_auth_initplans.sql"
+      }
+    ],
+    "scope": {
+      "hostedPostgreSql": true,
+      "realSupabaseAuthUidAndJwtHelpers": true,
+      "syntheticRoleClaims": true,
+      "fixturesFullyRolledBack": true,
+      "permanentUsersCreated": false,
+      "emailsOrInvitationsSent": false,
+      "authPasswordSignInTested": false,
+      "authenticatedPostgrestOrBrowserEndToEndTested": false
+    },
+    "initplan_finding": {
+      "originalPlanAlreadyUsedInitPlans": true,
+      "cause": "Supabase Splinter textual detection did not recognise SELECT (auth.jwt() ->> ...).",
+      "change": "A new migration expresses (SELECT auth.jwt()) ->> ... without changing access semantics.",
+      "currentPerformanceAdvisorFindings": 0,
+      "primarySource": "https://github.com/supabase/splinter/blob/main/splinter.sql",
+      "remediationUrl": "https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan"
+    }
+  }
+}

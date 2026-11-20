@@ -1,0 +1,144 @@
+{
+  "version": "6.4.3",
+  "release_scope": {
+    "direct_email_password_signup_frontend": true,
+    "disable_email_confirmation_requested_by_owner": true,
+    "confirmation_resend_ui_removed": true,
+    "workspace_requires_server_verified_session": true,
+    "password_recovery_retained": true,
+    "manual_listing_without_ai": true,
+    "workspace_visibility": "Private to each authenticated, non-anonymous account",
+    "shared_marketplace": false,
+    "live_payments_or_external_messages": false
+  },
+  "verification_status": "409 local tests, syntax checks and real-project static build passed; live confirmation toggle and 6.4.3 deployment remain pending",
+  "source_control": {
+    "github_repository": "https://github.com/jheype/watchify",
+    "github_visibility": "public",
+    "expected_remote_parent": "93f991250fb1063d13e2523805da10279100ec13",
+    "release_6_4_3_published": false
+  },
+  "current_production": {
+    "version": "6.4.2",
+    "deployment": {
+      "id": "dpl_5uiGT6oerTYTnAkCSaajBei3Ca2h",
+      "status": "READY",
+      "build_completed_in_logs": true,
+      "canonical_url": "https://watchify-azure.vercel.app/",
+      "immutable_url": "https://watchify-qanl561bd-jheypes-projects.vercel.app/",
+      "aliases": [
+        "https://watchify-azure.vercel.app/",
+        "https://watchify-jheypes-projects.vercel.app/"
+      ],
+      "method": "Official Vercel upload_file and create_deployment files API",
+      "native_team_access_grant": "Authorised for owner-confirmed jheypes-projects",
+      "github_integration_installed": false,
+      "automatic_git_deployments_connected": false,
+      "github_source_commit": "daa26712e31d0ba36023052ec335906135621f10",
+      "local_source_commit": "7d27b780c92c8918ec3870d09ceb126192ac0d2c",
+      "source_tree": "c05ddb4a985495cdbd87f7b30875c3862a4d7a7d",
+      "source_files": 141,
+      "canonical_alias_requires_vercel_login": false,
+      "temporary_share_link_created": false
+    },
+    "historical_checks_file": "docs/RELEASE-6.4.2-CHECKS.json",
+    "release_6_4_3_deployed": false
+  },
+  "auth_configuration": {
+    "supabase_project": "Watchify (iqfsalmepkcjawyukiie)",
+    "supabase_organization": "TripApp (agkymdcxgzyjdppxmqoz)",
+    "desired": {
+      "public_email_signup_enabled": true,
+      "email_confirmation_enabled": false,
+      "mailer_autoconfirm": true,
+      "anonymous_auth_enabled": false
+    },
+    "last_observed": {
+      "observed_at_utc": "2026-11-20 21:39 UTC",
+      "endpoint": "/auth/v1/settings",
+      "mailer_autoconfirm": false,
+      "email_confirmation_still_required": true
+    },
+    "server_toggle_status": "Pending authenticated dashboard or supported Management API access",
+    "frontend": "Implicit signup helper adopts only a returned session; main client retains PKCE and verifies the account with auth.getUser()",
+    "no_session_response_grants_access": false,
+    "external_recovery_email_delivery": "SMTP/provider delivery not configured or verified by this change",
+    "site_and_recovery_redirect_urls": "Canonical origin is https://watchify-azure.vercel.app/; configuration and verification remain pending",
+    "existing_unconfirmed_accounts": "Not changed; inspect and use supported Supabase Auth administration if an intended account still requires confirmation",
+    "auth_users_sql_workaround_used": false,
+    "new_permanent_test_accounts_created": false
+  },
+  "hosted_database_validation": {
+    "migration_history_verified": true,
+    "test_file": "supabase/tests/public_account_rls.sql",
+    "declared_test_groups": 24,
+    "status": "Incomplete: hosted SQL execution did not return a result before cancellation",
+    "test_success_claimed": false,
+    "fixture_cleanup": {
+      "status": "Independently checked after cancellation; no persistent fixture or pending test session observed",
+      "remaining_minimal_synthetic_auth_users": 0,
+      "related_memberships": 0,
+      "related_workspaces": 0,
+      "snapshot_fixture_markers": 0,
+      "pending_test_sessions": 0
+    },
+    "scope": "The SQL test uses synthetic claims and transaction-scoped fixtures; it is not an Auth HTTP sign-in or browser end-to-end test.",
+    "security_advisor_findings": 0,
+    "performance_advisor_findings": 0,
+    "result_file": "supabase/tests/public_account_validation_result.json"
+  },
+  "database_changes_in_6_4_3": false,
+  "deployed_end_to_end_validation": {
+    "status": "Not completed for 6.4.3",
+    "pending": [
+      "Apply and verify mailer_autoconfirm=true on the Watchify project",
+      "Publish and verify the 6.4.3 frontend",
+      "New signup returns a real session without a confirmation-email step",
+      "Password sign-in and handling of intended historical unconfirmed accounts",
+      "Saving/reload and isolation between two accounts",
+      "Manual listing with own photos and persistence",
+      "Password recovery after email delivery and redirect setup",
+      "Unauthenticated Supabase data denial"
+    ],
+    "signup_success_claimed": false
+  },
+  "node_tests": {
+    "command": "npm test",
+    "tests": 409,
+    "pass": 409,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "syntax_check": "passed",
+  "diff_check": "passed",
+  "static_build": {
+    "status": "passed",
+    "command": "npm run build",
+    "real_supabase_configuration": true,
+    "supabase_project": "iqfsalmepkcjawyukiie",
+    "published_configuration": "Project URL and public publishable key only",
+    "roots": [
+      "assets",
+      "index.html",
+      "robots.txt",
+      "src"
+    ],
+    "server_environment_dependencies_docs_and_tests_excluded": true,
+    "auth_display_version": "6.4.3"
+  },
+  "manual_photo_validation": {
+    "new_uploads": "Magic bytes, MIME, decode and 24 megapixel maximum",
+    "restored_photos": "Decoded again before manual publication; corrupt or oversized media rejected",
+    "concurrency": "Publication cancels when photo data, form declarations or the active account change during decoding"
+  },
+  "references": [
+    "https://supabase.com/docs/reference/javascript/auth-signup",
+    "https://supabase.com/docs/guides/auth/auth-smtp",
+    "https://supabase.com/docs/guides/auth/auth-pkce-flow",
+    "https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid"
+  ],
+  "prepared_at_utc": "2026-11-20T21:44:15Z",
+  "verified_at_utc": "2026-11-20T21:45:31Z"
+}

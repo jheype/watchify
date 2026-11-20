@@ -1,8 +1,12 @@
-# Watchify 6.4.2 preview for Zeit
+# Watchify 6.4.3 preview for Zeit
 
 The hosted preview publishes the existing Watchify frontend and uses Supabase for authenticated preview data. The local Node integration server remains a separate local development tool.
 
-## Published deployment
+## 6.4.3 status
+
+The owner requested registration without email confirmation. The frontend has been updated for direct signup and still requires a server-verified, non-anonymous session before opening a private workspace. The confirmation-resend UI has been removed. The live Supabase setting remained `mailer_autoconfirm: false` when checked on 20 November 2026 at 21:39 UTC; changing it to `true` is still pending. The new source has not yet been deployed.
+
+## Current deployment (6.4.2)
 
 - **Canonical public URL:** [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/)
 - Additional alias: [https://watchify-jheypes-projects.vercel.app/](https://watchify-jheypes-projects.vercel.app/)
@@ -51,7 +55,7 @@ The app uses hash navigation, so the preview does not rewrite unknown paths to `
 
 Use the Watchify project (`iqfsalmepkcjawyukiie`) in the TripApp organisation. It is separate from the preserved Trip project. Apply the complete committed migration history when provisioning another environment. The 6.4.2 migration removes the old tester allowlist requirement without deleting any workspace. Each authenticated, non-anonymous account can read and save only its own workspace.
 
-The sign-in screen includes Create account, Resend confirmation and Forgot password. Keep email confirmation enabled and configure an email provider that can deliver confirmation and recovery messages to external recipients. Supabase's built-in sender is restricted to organisation members; a successful frontend build does not resolve that restriction. Follow `docs/SUPABASE_PREVIEW.md` for the current project state and email setup.
+In 6.4.3 the sign-in screen includes Create account and Forgot password. Configure Supabase with public email signup enabled, email confirmation disabled (`mailer_autoconfirm: true`) and anonymous sign-in disabled, as requested by the owner. The last observed server setting still requires confirmation, so direct signup is not yet verified. Password recovery continues to require an email provider and working redirects. Follow `docs/SUPABASE_PREVIEW.md` for the current project state and supported handling of older unconfirmed accounts.
 
 Auth's Site URL and allowed redirect URLs still need configuration and verification for the canonical origin `https://watchify-azure.vercel.app/`. The app supplies `origin + pathname` (`https://watchify-azure.vercel.app/` on the canonical alias) as its callback URL. Add additional deployment origins only when they are actually needed for testing. PKCE links must be opened in the browser that requested them, using the newest link; the app explains this when requesting an email.
 
@@ -65,9 +69,9 @@ To test a listing without AI, upload your own supported watch photos, choose **C
 
 ## Remaining end-to-end verification
 
-Run the existing checks and the static build with the public Supabase configuration set. Confirm that the generated directory contains only `index.html`, `robots.txt`, `src`, and `assets`. On the deployed URL, verify registration using an authorised external test address, email confirmation, sign-in, password recovery, sign-out, persistence after reload, separation between two accounts, manual listing publication and expected image rendering. Verify a denied unauthenticated data request. The public HTTP check already confirmed `404` for `/server/start.cjs`, `/.env` and `/api/health`; repeat these boundary checks after a later deployment.
+Run the existing checks and the static build with the public Supabase configuration set. Confirm that the generated directory contains only `index.html`, `robots.txt`, `src`, and `assets`. After deploying 6.4.3 and changing the server setting, verify direct registration with a controlled test address, a returned and verified session without an email-confirmation step, password sign-in, sign-out, persistence after reload, separation between two accounts, manual listing publication and expected image rendering. Test password recovery separately after email delivery and redirects are configured. Verify a denied unauthenticated data request. The public HTTP check already confirmed `404` for `/server/start.cjs`, `/.env` and `/api/health`; repeat these boundary checks after a later deployment.
 
-Record what was actually checked in `docs/RELEASE-6.4.2-CHECKS.json`. Vercel READY status, build completion and the public signup form have been observed. Public account testing still depends on the pending external email delivery, Auth URL settings and deployed account/workspace checks. The 24-group hosted SQL test run remains incomplete because no execution result was returned; do not report it as passing.
+Record new checks in `docs/RELEASE-6.4.3-CHECKS.json`; retain `docs/RELEASE-6.4.2-CHECKS.json` as historical evidence. Vercel READY status, build completion and the public signup form were observed for 6.4.2. Direct signup testing for 6.4.3 still depends on the pending confirmation toggle, the new deployment and account/workspace checks. Recovery also needs verified external email delivery and Auth URL settings. The 24-group hosted SQL test run remains incomplete because no execution result was returned; do not report it as passing.
 
 ## References
 

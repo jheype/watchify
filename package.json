@@ -1,6 +1,6 @@
 {
   "name": "watchify",
-  "version": "6.4.2",
+  "version": "6.4.3",
   "private": true,
   "description": "Watchify test preview with public signup, private workspaces and optional AI photo assessment.",
   "scripts": {

@@ -44,8 +44,8 @@
   }
   function safeMessage(error, fallback) {
     if (error?.code === 'invalid_credentials') return 'The email or password is incorrect.';
-    if (error?.code === 'email_not_confirmed') return 'Confirm your email before signing in. Check your inbox or choose Resend confirmation below.';
-    if (error?.code === 'email_address_not_authorized') return 'Email delivery is not available for this address yet. The site owner needs to finish setting up confirmation and recovery emails. Please try again later.';
+    if (error?.code === 'email_not_confirmed') return 'The server still requires email confirmation for this account. Contact the site owner to finish enabling direct sign-in.';
+    if (error?.code === 'email_address_not_authorized') return 'Email delivery is not available for this address yet. The site owner needs to finish setting up email delivery. Please try again later.';
     if (error?.code === 'over_email_send_rate_limit') return 'The email service has reached its sending limit. Wait before requesting another email.';
     if (error?.status === 429 || error?.code === 'over_request_rate_limit') return 'Too many attempts. Please wait a moment and try again.';
     if (error?.code === 'signup_disabled') return 'New account registration is currently unavailable. Please try again later.';
@@ -83,22 +83,39 @@
     if ((expectedId && account.id !== expectedId) || (authObserved && observedAccountId !== account.id)) throw sessionChanged();
     return account;
   }
+  async function signUpWithPassword(email, password) {
+    // Supabase does not support PKCE sign-up with email autoconfirm. Keep
+    // recovery on PKCE, and adopt only a returned, real sign-up session.
+    const options = authOptions(false);
+    options.auth.flowType = 'implicit';
+    options.auth.storageKey = 'watchify-auth-' + new URL(config.supabaseUrl).hostname + '-signup';
+    const signupClient = root.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, options);
+    const previousAccount = observedAccountId;
+    const result = await signupClient.auth.signUp({ email, password });
+    if (result.error || !result.data?.session) return result;
+    if (authObserved && observedAccountId !== previousAccount) throw sessionChanged();
+    const session = result.data.session;
+    if (!session.user?.id || session.user.is_anonymous) throw Object.assign(new Error('Missing sign-up account'), { code: 'AUTH_REQUIRED' });
+    const adopted = await client.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
+    if (adopted.error) throw adopted.error;
+    if (adopted.data?.session?.user?.id !== session.user.id) throw sessionChanged();
+    return adopted;
+  }
   function loginForm(notice = '') {
     return new Promise(resolve => {
       let rendering = 0;
       function render(mode = 'signin', email = '', message = '') {
         const version = ++rendering;
         const signup = mode === 'signup', password = signup || mode === 'signin';
-        const titles = { signin: 'A closer look at Watchify.', signup: 'Create your Watchify account.', reset: 'Reset your password.', resend: 'Confirm your email.' };
-        const descriptions = { signin: 'Sign in to explore Watchify and save changes to your own workspace.', signup: 'Register with your email and password. Confirm your email to start using your account.', reset: 'Enter your email to request a password reset link.', resend: 'Request another confirmation link for your email address.' };
-        const actions = { signin: 'Enter Watchify', signup: 'Create account', reset: 'Request reset link', resend: 'Resend confirmation' };
-        const links = mode === 'signin' ? '<button id="preview-create-account" type="button">Create account</button><button id="preview-forgot-password" type="button">Forgot password?</button><button id="preview-resend-confirmation" type="button">Resend confirmation</button>' : '<button id="preview-back-signin" type="button">Back to sign in</button>';
-        gate('<span class="preview-kicker">Watchify 6.4.2 · Preview</span><h1>' + titles[mode] + '</h1><p>' + descriptions[mode] + '</p><p class="preview-message" id="preview-auth-message" role="status">' + esc(message) + '</p><form id="preview-login" class="preview-form"><label>Email<input id="preview-auth-email" name="email" type="email" autocomplete="username" maxlength="254" value="' + esc(email) + '" required></label>' + (password ? '<label>Password<input id="preview-auth-password" name="password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" ' + (signup ? 'minlength="12" ' : '') + 'maxlength="256" required></label>' : '') + (signup ? '<p class="preview-password-help">Use at least 12 characters.</p><label>Confirm password<input id="preview-auth-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>' : '') + '<p class="preview-error" id="preview-login-error" role="alert"></p><button id="preview-auth-submit" class="btn primary full" type="submit">' + actions[mode] + '</button></form><nav class="preview-auth-links" aria-label="Account access">' + links + '</nav><p class="preview-note">Each account has a separate workspace. Orders, messages and payments use sample data; no purchases or payments are made.</p>');
+        const titles = { signin: 'A closer look at Watchify.', signup: 'Create your Watchify account.', reset: 'Reset your password.' };
+        const descriptions = { signin: 'Sign in to explore Watchify and save changes to your own workspace.', signup: 'Create your account with an email and password to start testing.', reset: 'Enter your email to request a password reset link.' };
+        const actions = { signin: 'Enter Watchify', signup: 'Create account', reset: 'Request reset link' };
+        const links = mode === 'signin' ? '<button id="preview-create-account" type="button">Create account</button><button id="preview-forgot-password" type="button">Forgot password?</button>' : '<button id="preview-back-signin" type="button">Back to sign in</button>';
+        gate('<span class="preview-kicker">Watchify 6.4.3 · Preview</span><h1>' + titles[mode] + '</h1><p>' + descriptions[mode] + '</p><p class="preview-message" id="preview-auth-message" role="status">' + esc(message) + '</p><form id="preview-login" class="preview-form"><label>Email<input id="preview-auth-email" name="email" type="email" autocomplete="username" maxlength="254" value="' + esc(email) + '" required></label>' + (password ? '<label>Password<input id="preview-auth-password" name="password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" ' + (signup ? 'minlength="12" ' : '') + 'maxlength="256" required></label>' : '') + (signup ? '<p class="preview-password-help">Use at least 12 characters.</p><label>Confirm password<input id="preview-auth-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>' : '') + '<p class="preview-error" id="preview-login-error" role="alert"></p><button id="preview-auth-submit" class="btn primary full" type="submit">' + actions[mode] + '</button></form><nav class="preview-auth-links" aria-label="Account access">' + links + '</nav><p class="preview-note">Each account has a separate workspace. Orders, messages and payments use sample data; no purchases or payments are made.</p>');
         const form = element('preview-login'), button = element('preview-auth-submit'), errorText = element('preview-login-error');
         const navigate = next => { if (!button.disabled) render(next, element('preview-auth-email').value.trim()); };
         element('preview-create-account')?.addEventListener('click', () => navigate('signup'));
         element('preview-forgot-password')?.addEventListener('click', () => navigate('reset'));
-        element('preview-resend-confirmation')?.addEventListener('click', () => navigate('resend'));
         element('preview-back-signin')?.addEventListener('click', () => navigate('signin'));
         form.addEventListener('submit', async event => {
           event.preventDefault(); event.stopPropagation();
@@ -112,20 +129,19 @@
           try {
             let result;
             if (mode === 'signin') result = await client.auth.signInWithPassword({ email: address, password: secret });
-            else if (signup) result = await client.auth.signUp({ email: address, password: secret, options: { emailRedirectTo: emailReturnUrl() } });
-            else if (mode === 'reset') result = await client.auth.resetPasswordForEmail(address, { redirectTo: emailReturnUrl() });
-            else result = await client.auth.resend({ type: 'signup', email: address, options: { emailRedirectTo: emailReturnUrl() } });
+            else if (signup) result = await signUpWithPassword(address, secret);
+            else result = await client.auth.resetPasswordForEmail(address, { redirectTo: emailReturnUrl() });
             if (result.error) throw result.error;
             if (mode === 'signin' || (signup && result.data?.session)) {
               if (!result.data?.session?.user?.id) throw Object.assign(new Error('Missing session'), { code: 'AUTH_REQUIRED' });
               const account = await verifiedUser(result.data.session.user.id);
               form.reset(); resolve(account); return;
             }
-            // A user object without a session can be obfuscated for an existing
-            // address. It never grants access or proves that an email arrived.
+            // A user object without a session does not grant access. It can
+            // also be an obfuscated response for an existing email address.
             const feedback = mode === 'reset'
               ? 'If an account exists for this email, a reset message has been requested. Check your inbox and spam folder. Open the newest link in this same browser.'
-              : 'If this address needs confirmation, a confirmation email has been requested. Check your inbox and spam folder. Open the newest link in this same browser, then sign in.';
+              : 'Sign-up did not open a session. The server may still require email confirmation, or this email may already have an account. Try signing in; if it fails, contact the site owner.';
             render('signin', address, feedback);
           } catch (error) {
             if (version === rendering) errorText.textContent = safeMessage(error, mode === 'signin' ? 'Sign-in could not be completed. Check your connection and try again.' : 'The request could not be completed. Check your connection and try again.');
@@ -187,7 +203,7 @@
       if (result.data.redirectType === 'recovery') return { notice: await resetPasswordForm(result.data.session, account) };
       return { account };
     } catch (_) {
-      return { notice: 'This email link could not finish sign-in. It may have expired or been opened in a different browser. Try signing in; if needed, request a new confirmation or reset link in this browser.' };
+      return { notice: 'This email link could not finish sign-in. It may have expired or been opened in a different browser. Try signing in; if needed, request a new password reset link in this browser.' };
     } finally { cleanUrl(); }
   }
   async function retryGate(title, text) {

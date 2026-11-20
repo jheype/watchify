@@ -15,7 +15,7 @@ const settle = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(
 function setup(options = {}) {
   const nodes = new Map(), timers = new Map(), intervals = new Map(), downloads = [], urls = new Map();
   const listeners = new Map(), windowListeners = new Map(), authListeners = new Set();
-  let nextTimer = 0, currentUser = options.initialUser === undefined ? USER_A : options.initialUser, reloads = 0, confirmations = 0, captureCalls = 0;
+  let nextTimer = 0, currentUser = options.initialUser === undefined ? USER_A : options.initialUser, signupSession = null, reloads = 0, confirmations = 0, captureCalls = 0;
   const authCalls = [], clientOptions = [], historyChanges = [];
   const unescape = text => text.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   class Element {
@@ -65,12 +65,20 @@ function setup(options = {}) {
     onAuthStateChange(fn) { authListeners.add(fn); return { data: { subscription: { unsubscribe() { authListeners.delete(fn); } } } }; },
     async signOut() { if (options.signOut) return options.signOut(); switchUser(null); return { error: null }; },
     async signInWithPassword(args) { authCalls.push({ method: 'signIn', args: copy(args) }); return signedIn(options.signIn ? await options.signIn(args) : { data: { user: USER_A, session: sessionFor(USER_A) }, error: null }); },
-    async signUp(args) { authCalls.push({ method: 'signUp', args: copy(args) }); return signedIn(options.signUp ? await options.signUp(args) : { data: { user: USER_A, session: null }, error: null }); },
+    async signUp() { throw new Error('Autoconfirm signup must not use the PKCE client.'); },
+    async setSession() { authCalls.push({ method: 'adoptSignupSession', accountId: signupSession?.user?.id }); return signedIn(options.adoptSession ? await options.adoptSession() : { data: { user: signupSession?.user, session: signupSession }, error: null }); },
     async resetPasswordForEmail(email, args) { authCalls.push({ method: 'reset', email, args: copy(args) }); return options.reset ? options.reset(email, args) : { data: {}, error: null }; },
-    async resend(args) { authCalls.push({ method: 'resend', args: copy(args) }); return options.resend ? options.resend(args) : { data: {}, error: null }; },
     async exchangeCodeForSession(code) { authCalls.push({ method: 'exchange', code }); return signedIn(options.exchange ? await options.exchange(code) : { data: { user: USER_A, session: sessionFor(USER_A), redirectType: null }, error: null }); },
     async updateUser() { throw new Error('Password changes must use the recovery-bound client.'); }
   } };
+  const makeSignupClient = () => ({ auth: {
+    async signUp(args) {
+      authCalls.push({ method: 'signUp', args: copy(args) });
+      const result = options.signUp ? await options.signUp(args) : { data: { user: USER_A, session: null }, error: null };
+      signupSession = result.data?.session || null;
+      return result;
+    }
+  } });
   const makeRecoveryClient = () => {
     const account = currentUser;
     return { auth: {
@@ -115,7 +123,7 @@ function setup(options = {}) {
   location.reload = () => { reloads++; };
   const context = {
     WATCHIFY_CONFIG: { mode: 'zeit-preview', supabaseUrl: 'https://watchifytestproject.supabase.co', supabasePublishableKey: 'sb_publishable_fixture_only' },
-    supabase: { createClient: (_url, _key, settings) => { clientOptions.push(copy(settings.auth)); return settings.auth.persistSession ? client : makeRecoveryClient(); } },
+    supabase: { createClient: (_url, _key, settings) => { clientOptions.push(copy(settings.auth)); return settings.auth.persistSession ? client : settings.auth.flowType === 'implicit' ? makeSignupClient() : makeRecoveryClient(); } },
     WatchifyCloudWorkspace: { create({ onStatus }) { cloud.onStatus = onStatus; return cloud; } },
     WatchifyWorkspaceSnapshot: {
       async capture(state) { captureCalls++; return options.capture ? options.capture(state) : { note: state.note }; },
@@ -153,28 +161,62 @@ async function submitAuth(h, { email = USER_A.email, password = 'fixture passwor
 const fixtureSession = account => ({ user: account, access_token: 'fixture-access-token', refresh_token: 'fixture-refresh-token' });
 async function waitForNode(h, id) { for (let i = 0; i < 20 && !h.nodes.has(id); i++) await settle(); assert.ok(h.nodes.has(id), 'Expected UI element ' + id); }
 
-test('public signup without a session requests confirmation and never opens a workspace', async () => {
+test('signup without a session explains the backend mismatch and never opens a workspace', async () => {
   const h = setup({ initialUser: null });
   let authenticated = false;
   const opening = h.api.authenticate().then(value => { authenticated = value; return value; }); await settle();
   await h.nodes.get('preview-create-account').emit('click');
   await submitAuth(h);
   assert.equal(h.authCalls[0].method, 'signUp');
-  assert.equal(h.authCalls[0].args.options.emailRedirectTo, 'https://watchify.example/');
-  assert.match(h.nodes.get('preview-auth-message').textContent, /confirmation email has been requested/);
+  assert.equal(h.authCalls[0].args.options, undefined);
+  assert.match(h.nodes.get('preview-auth-message').textContent, /Sign-up did not open a session/);
+  assert.match(h.nodes.get('preview-auth-message').textContent, /server may still require email confirmation/);
   assert.equal(h.nodes.has('preview-auth-confirm'), false);
+  assert.equal(h.nodes.has('preview-resend-confirmation'), false);
+  assert.equal(h.authCalls.some(call => call.method === 'adoptSignupSession'), false);
   assert.equal(authenticated, false);
   assert.equal(h.cloud.loads.length, 0);
   await submitAuth(h); assert.equal(await opening, true);
 });
 
-test('signup can continue only when a returned session is verified with getUser', async () => {
+test('immediate signup uses a non-PKCE client and opens only a session verified with getUser', async () => {
   let checked = 0;
   const h = setup({ initialUser: null, signUp: async () => ({ data: { session: fixtureSession(USER_A), user: USER_A }, error: null }), getUser: async account => { checked++; return { data: { user: account }, error: null }; } });
   const opening = h.api.authenticate(); await settle();
-  await h.nodes.get('preview-create-account').emit('click'); await submitAuth(h);
+  assert.equal(h.nodes.has('preview-resend-confirmation'), false);
+  await h.nodes.get('preview-create-account').emit('click');
+  assert.doesNotMatch(h.nodes.get('main').innerHTML, /Confirm your email|Resend confirmation/);
+  await submitAuth(h);
   assert.equal(await opening, true);
   assert.equal(checked, 1);
+  assert.equal(h.clientOptions[0].flowType, 'pkce');
+  assert.equal(h.clientOptions[1].flowType, 'implicit');
+  assert.equal(h.clientOptions[1].persistSession, false);
+  assert.equal(h.clientOptions[1].detectSessionInUrl, false);
+  assert.notEqual(h.clientOptions[1].storageKey, h.clientOptions[0].storageKey);
+  assert.equal(h.authCalls.find(call => call.method === 'adoptSignupSession').accountId, USER_A.id);
+});
+
+test('a signup session that cannot be verified does not open the account', async () => {
+  const h = setup({ initialUser: null, signUp: async () => ({ data: { session: fixtureSession(USER_A), user: USER_A }, error: null }), getUser: async () => ({ data: { user: null }, error: { status: 401 } }) });
+  let authenticated = false;
+  void h.api.authenticate().then(result => { authenticated = result; }); await settle();
+  await h.nodes.get('preview-create-account').emit('click'); await submitAuth(h);
+  assert.equal(authenticated, false);
+  assert.equal(h.cloud.loads.length, 0);
+  assert.match(h.nodes.get('preview-login-error').textContent, /could not be completed/);
+});
+
+test('a concurrent sign-in prevents adopting a late signup session from another account', async () => {
+  const pending = deferred();
+  const h = setup({ initialUser: null, signUp: async () => { await pending.promise; return { data: { session: fixtureSession(USER_A), user: USER_A }, error: null }; } });
+  void h.api.authenticate(); await settle();
+  await h.nodes.get('preview-create-account').emit('click');
+  const submitted = submitAuth(h); await settle();
+  h.switchUser(USER_B); pending.resolve(); await submitted;
+  assert.equal(h.authCalls.some(call => call.method === 'adoptSignupSession'), false);
+  assert.match(h.nodes.get('preview-login-error').textContent, /account changed/);
+  assert.equal(h.cloud.loads.length, 0);
 });
 
 test('signup rejects a mismatched or short password before making a request', async () => {
@@ -187,7 +229,7 @@ test('signup rejects a mismatched or short password before making a request', as
   assert.equal(h.authCalls.length, 0);
 });
 
-test('email delivery failures and rate limits remain errors instead of confirmation success', async t => {
+test('unexpected email requirements and rate limits remain signup errors', async t => {
   for (const [code, message] of [['email_address_not_authorized', /delivery is not available/], ['over_email_send_rate_limit', /sending limit/], ['signup_disabled', /registration is currently unavailable/]]) {
     await t.test(code, async () => {
       const h = setup({ initialUser: null, signUp: async () => ({ data: null, error: { code } }) });
@@ -200,15 +242,12 @@ test('email delivery failures and rate limits remain errors instead of confirmat
   }
 });
 
-test('unconfirmed sign-in offers a confirmation request without claiming delivery', async () => {
+test('a backend still requiring confirmation reports the setting without asking for email confirmation', async () => {
   const h = setup({ initialUser: null, signIn: async () => ({ data: null, error: { code: 'email_not_confirmed' } }) });
   void h.api.authenticate(); await settle(); await submitAuth(h);
-  assert.match(h.nodes.get('preview-login-error').textContent, /Confirm your email/);
-  await h.nodes.get('preview-resend-confirmation').emit('click'); await submitAuth(h);
-  const request = h.authCalls.find(call => call.method === 'resend');
-  assert.equal(request.args.email, USER_A.email);
-  assert.equal(request.args.type, 'signup');
-  assert.match(h.nodes.get('preview-auth-message').textContent, /has been requested/);
+  assert.match(h.nodes.get('preview-login-error').textContent, /server still requires email confirmation/);
+  assert.equal(h.nodes.has('preview-resend-confirmation'), false);
+  assert.doesNotMatch(h.nodes.get('preview-login-error').textContent, /Confirm your email|Check your inbox/);
   assert.equal(h.cloud.loads.length, 0);
 });
 

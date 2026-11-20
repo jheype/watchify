@@ -26,12 +26,15 @@
   "external_state": {
     "github_repository": "https://github.com/jheype/watchify",
     "github_visibility": "public",
-    "github_publication": "blocked: GitHub app installation has access only to trip",
+    "github_publication": "published and verified",
+    "github_published_source_commit": "9f02138c15e324cc9eaab311658486c85ee7a7e9",
+    "github_source_tree": "b039c1dd6a132790fc12e43af0b9db4c72485b32",
+    "github_imported_local_commit": "709a67b773afa9bc204a0d922135d45aa9dee442",
     "supabase_organization": "TripApp (agkymdcxgzyjdppxmqoz)",
     "supabase_project": "Watchify (iqfsalmepkcjawyukiie); ACTIVE_HEALTHY; sa-east-1",
     "migration_applied": true,
-    "vercel_deployment": "not created; team authorization required",
-    "trip_deletion": "pending authenticated dashboard access; Trip still present"
+    "vercel_deployment": "not deployed; correct team awaiting identification after owner rejected LG team",
+    "trip_deletion": "not required; Trip retained as requested; Watchify uses a separate project"
   },
   "database_local_validation": {
     "engine": "@electric-sql/pglite@0.5.17",

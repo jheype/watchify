@@ -4,20 +4,20 @@ The hosted preview publishes the existing Watchify frontend and uses Supabase fo
 
 ## 6.4.3 status
 
-The owner requested registration without email confirmation. The frontend has been updated for direct signup and still requires a server-verified, non-anonymous session before opening a private workspace. The confirmation-resend UI has been removed. The live Supabase setting remained `mailer_autoconfirm: false` when checked on 20 November 2026 at 21:39 UTC; changing it to `true` is still pending. The new source has not yet been deployed.
+The owner requested registration without email confirmation. The frontend has been updated for direct signup and still requires a server-verified, non-anonymous session before opening a private workspace. The confirmation-resend UI has been removed. The live Supabase setting remained `mailer_autoconfirm: false` when checked on 20 November 2026 at 21:56:05 UTC; changing it to `true` is still pending. The 6.4.3 frontend is deployed and verified READY. Enabling direct signup on the server still requires access to the authenticated Supabase dashboard.
 
-## Current deployment (6.4.2)
+## Current deployment (6.4.3)
 
 - **Canonical public URL:** [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/)
 - Additional alias: [https://watchify-jheypes-projects.vercel.app/](https://watchify-jheypes-projects.vercel.app/)
-- Immutable deployment URL: [https://watchify-qanl561bd-jheypes-projects.vercel.app/](https://watchify-qanl561bd-jheypes-projects.vercel.app/)
-- Deployment ID: `dpl_5uiGT6oerTYTnAkCSaajBei3Ca2h`; Vercel status **READY**, with build completion confirmed in its logs.
-- Deployed GitHub source commit: [`daa26712e31d0ba36023052ec335906135621f10`](https://github.com/jheype/watchify/commit/daa26712e31d0ba36023052ec335906135621f10).
-- Deployed source tree: `c05ddb4a985495cdbd87f7b30875c3862a4d7a7d`, containing all 141 tracked source files. The static build publishes only its permitted frontend output.
+- Immutable deployment URL: [https://watchify-bdhs11b68-jheypes-projects.vercel.app/](https://watchify-bdhs11b68-jheypes-projects.vercel.app/)
+- Deployment ID: `dpl_2BH1KQrpwgfcUsPHzprefchkrAXm`; Vercel status **READY**, confirmed for the production deployment.
+- Deployed GitHub source commit: [`171f6b0b4a43565538476b2e874b01bbd2e76eb3`](https://github.com/jheype/watchify/commit/171f6b0b4a43565538476b2e874b01bbd2e76eb3).
+- Deployed source tree: `7173259d7519e8f6928d4f699f072d50cfa8f6d1`, containing all 142 tracked source files. The static build publishes only its permitted frontend output.
 
-The canonical alias opened in a browser without requesting a Vercel login. Version 6.4.2 was visible, and Create account opened the email/password/password-confirmation form. This confirms site delivery and the form's presence, not successful account creation or email delivery. External signup, confirmation, sign-in, recovery and persistence still require live end-to-end verification.
+The canonical alias opened in a browser without requesting a Vercel login. Version 6.4.3 was visible, Create account used neutral signup copy, and confirmation-resend controls were absent. This confirms frontend delivery and form behaviour. Successful direct signup still depends on the pending server confirmation toggle; sign-in, recovery and persistence require live end-to-end verification.
 
-Independent HTTP requests without cookies or authorisation also returned `200` for `/` and `/src/runtime-config.js`; the runtime configuration points to the Watchify Supabase project. `/server/start.cjs`, `/.env` and `/api/health` returned `404`. Public responses included `X-Robots-Tag: noindex, nofollow, noarchive`.
+Independent HTTP requests without cookies or authorisation also returned `200` for `/` and `/src/runtime-config.js`; the runtime configuration points to the Watchify Supabase project. `/server/start.cjs`, `/.env` and `/api/health` returned `404`. Public responses included `X-Robots-Tag: noindex, nofollow, noarchive`. The public Auth, app and cloud-workspace scripts were byte-identical to the published source. Anonymous REST reads of `preview_testers` and `tester_workspaces` returned HTTP `401` with permission-denied code `42501`; no account credentials were sent. This does not establish isolation between two authenticated browser accounts.
 
 Native Vercel access to the owner-confirmed team is authorised. This deployment used file uploads and the official deployment API. Vercel's GitHub integration is not installed, and automatic deployments from repository commits are not connected. A later documentation-only GitHub commit does not change this deployed source tree.
 
@@ -69,9 +69,9 @@ To test a listing without AI, upload your own supported watch photos, choose **C
 
 ## Remaining end-to-end verification
 
-Run the existing checks and the static build with the public Supabase configuration set. Confirm that the generated directory contains only `index.html`, `robots.txt`, `src`, and `assets`. After deploying 6.4.3 and changing the server setting, verify direct registration with a controlled test address, a returned and verified session without an email-confirmation step, password sign-in, sign-out, persistence after reload, separation between two accounts, manual listing publication and expected image rendering. Test password recovery separately after email delivery and redirects are configured. Verify a denied unauthenticated data request. The public HTTP check already confirmed `404` for `/server/start.cjs`, `/.env` and `/api/health`; repeat these boundary checks after a later deployment.
+Run the existing checks and the static build with the public Supabase configuration set. Confirm that the generated directory contains only `index.html`, `robots.txt`, `src`, and `assets`. After changing the server setting, verify direct registration with a controlled test address, a returned and verified session without an email-confirmation step, password sign-in, sign-out, persistence after reload, separation between two accounts, manual listing publication and expected image rendering. Test password recovery separately after email delivery and redirects are configured. Anonymous reads were denied in the 6.4.3 HTTP check; repeat that check after access-policy changes. The public HTTP check already confirmed `404` for `/server/start.cjs`, `/.env` and `/api/health`; repeat these boundary checks after a later deployment.
 
-Record new checks in `docs/RELEASE-6.4.3-CHECKS.json`; retain `docs/RELEASE-6.4.2-CHECKS.json` as historical evidence. Vercel READY status, build completion and the public signup form were observed for 6.4.2. Direct signup testing for 6.4.3 still depends on the pending confirmation toggle, the new deployment and account/workspace checks. Recovery also needs verified external email delivery and Auth URL settings. The 24-group hosted SQL test run remains incomplete because no execution result was returned; do not report it as passing.
+Record new checks in `docs/RELEASE-6.4.3-CHECKS.json`; retain `docs/RELEASE-6.4.2-CHECKS.json` as historical evidence. Vercel READY status, build completion and the public signup form were observed for 6.4.3. Direct signup testing still depends on the pending confirmation toggle and account/workspace checks. Recovery also needs verified external email delivery and Auth URL settings. The 24-group hosted SQL test run remains incomplete because no execution result was returned; do not report it as passing.
 
 ## References
 

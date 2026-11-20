@@ -8,7 +8,7 @@ Version 6.4.3 prepares direct email/password registration without a confirmation
 
 The frontend now accepts a real session returned by Supabase signup, installs it in the main Auth client and verifies the account before opening its workspace. A user object without a valid session does not grant access. The UI no longer offers confirmation-email resend or promises a confirmation message.
 
-**The server setting is still pending:** `/auth/v1/settings` observed on 20 November 2026 at 21:39 UTC still returned `mailer_autoconfirm: false`. The requested configuration is email signup enabled, email confirmation disabled (`mailer_autoconfirm: true`) and anonymous sign-in disabled. Version 6.4.3 has not yet replaced the deployed 6.4.2 build described below. Do not treat the prepared frontend as proof that direct signup already works on the public site.
+**The server setting is still pending:** `/auth/v1/settings` observed on 20 November 2026 at 21:56:05 UTC still returned `mailer_autoconfirm: false`. The requested configuration is email signup enabled, email confirmation disabled (`mailer_autoconfirm: true`) and anonymous sign-in disabled. Version 6.4.3 is now deployed at the public URL below. The frontend is ready, but direct signup without a confirmation email is not yet verified because the server setting still requires confirmation.
 
 Once the setting is applied, new email/password signup does not require a confirmation message. Password recovery still depends on working email delivery and the correct redirect URLs. Existing unconfirmed accounts may need review and confirmation through supported Supabase Auth administration; this release does not silently change those accounts.
 
@@ -16,15 +16,15 @@ Once the setting is applied, new email/password signup does not require a confir
 
 **Open the site: [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/).**
 
-Vercel reports the 6.4.2 deployment as **READY**. The public alias opened without a Vercel login, displayed version 6.4.2, and showed the Create account form with email, password and password-confirmation fields. External signup, confirmation-email delivery, sign-in, recovery and saved-workspace flows have not yet been verified end to end. SMTP/email delivery and Supabase Site URL/redirect configuration remain pending.
+Vercel reports the 6.4.3 deployment as **READY**. The public alias opened without a Vercel login, displayed version 6.4.3 and showed the neutral Create account form without confirmation-resend controls. Public HTTP checks confirmed the deployed Auth, app and cloud-workspace scripts match the published source exactly. Anonymous reads of both private Supabase tables were denied. Signup, sign-in, recovery and saved-workspace flows have not been verified end to end; the confirmation toggle is still pending, and recovery email delivery and Auth redirects remain unverified.
 
-The deployment uses the exact 141-file source tree `c05ddb4a985495cdbd87f7b30875c3862a4d7a7d`, published in GitHub commit [`daa26712e31d0ba36023052ec335906135621f10`](https://github.com/jheype/watchify/commit/daa26712e31d0ba36023052ec335906135621f10). It was created through Vercel's files deployment API in the owner-confirmed `jheypes-projects` team. Native team access is authorised. Vercel's GitHub integration is not installed, so GitHub commits do **not** currently trigger automatic deployments.
+The deployment uses the exact 142-file source tree `7173259d7519e8f6928d4f699f072d50cfa8f6d1`, published in GitHub commit [`171f6b0b4a43565538476b2e874b01bbd2e76eb3`](https://github.com/jheype/watchify/commit/171f6b0b4a43565538476b2e874b01bbd2e76eb3). It was created through Vercel's files deployment API in the owner-confirmed `jheypes-projects` team. Native team access is authorised. Vercel's GitHub integration is not installed, so GitHub commits do **not** currently trigger automatic deployments.
 
 ## What is connected
 
 | Area | Behaviour in the hosted test release |
 | --- | --- |
-| Sign-in | Direct email/password signup UI is prepared for the requested Supabase confirmation setting. The live toggle and 6.4.3 account end-to-end checks remain pending; a server-verified session is always required. The database no longer requires an administrator allowlist. |
+| Sign-in | Direct email/password signup UI is prepared for the requested Supabase confirmation setting. The 6.4.3 frontend is deployed; the live toggle and account end-to-end checks remain pending; a server-verified session is always required. The database no longer requires an administrator allowlist. |
 | Workspace | Each signed-in account can save and reopen its own changes, profile, favourites, sample orders, messages and listing drafts. |
 | Concurrent sessions | Version checks prevent one tab or device from silently replacing newer saved changes. The UI offers recovery and export when saving fails. |
 | Images | Images in a test workspace are private to its account; the complete workspace has an 8 MiB size limit. |

@@ -4,19 +4,21 @@ Watchify is a collector’s app for understanding the watches you own: your coll
 
 Version **7.1.0** keeps that interface and adds a SwiftUI/WebKit iPhone app, native file sharing, and automatic cloud refresh between open devices using the same account. The native app's independent version is **1.0**, build **1**. Open [the iPhone project guide](ios/Watchify/README.md) and [the signed distribution steps](ios/Watchify/DISTRIBUTION.md).
 
-**Last verified production baseline: 7.0.0.** The 7.1.0 source and iPhone project are being prepared for publication and build verification. Open [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/). Vercel reported the previous deployment `dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv` **READY**, and the canonical site was visually checked on 23 November 2026: it displayed Watchify 7.0.0 and opened the Create account and Back to sign in views. No real account was created or signed in during that production check.
+**Release state: 7.1.0 published on GitHub and deployed; iPhone build and tests passed.** Open [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/). Vercel deployment `dpl_BDWTHjWbWMd9U54UKjLjJK9S3oP1` is **READY**. The canonical page displays 7.1.0; sign-in, account-creation navigation and the fixed browser recovery request page were checked without creating an account or requesting email.
 
-The previous deployed source is GitHub commit [`24bbfd2d80f4eef66e8f5654e77b7639524f4bbb`](https://github.com/jheype/watchify/commit/24bbfd2d80f4eef66e8f5654e77b7639524f4bbb), tree `a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12`, with all 158 tracked files verified against the local source. Its immutable deployment URL is [watchify-c3ua6pcft-jheypes-projects.vercel.app](https://watchify-c3ua6pcft-jheypes-projects.vercel.app/).
+The runtime source is GitHub commit [`fc8c303c214debdf1e26797db23d85fa15901c81`](https://github.com/jheype/watchify/commit/fc8c303c214debdf1e26797db23d85fa15901c81), tree `28556e1b3f55688e8837301262aca2d502cb1a52`. All **181 repository files** match the frozen source; the web deployment contains the corresponding **161 files**, excluding only `ios/` and `.github/`. Its immutable URL is [watchify-ofpeuiepk-jheypes-projects.vercel.app](https://watchify-ofpeuiepk-jheypes-projects.vercel.app/).
+
+[The native macOS CI run](https://github.com/jheype/watchify/actions/runs/45209955048) passed on that same commit using Xcode 26.3: **12 tests, zero failures**, plus a successful unsigned Release build for iPhone. The app has **not** been signed, installed on a physical iPhone or uploaded to TestFlight. Selecting the owner's Apple Developer team and completing signed distribution remain necessary.
 
 ## iPhone and automatic cloud refresh in 7.1.0
 
-The checked-in [Xcode project](ios/Watchify/Watchify.xcodeproj) contains Swift source and a shared scheme. The app presents the canonical interface in a persistent WKWebView, so the screens, calculations, collection records and account flows stay consistent with the website. Swift supplies native PDF/CSV/backup sharing, connection/retry states, foreground notifications and a privacy cover when inactive. Photo selection uses the iPhone's system chooser. No second Supabase database or native account copy is introduced.
+The checked-in [Xcode project](ios/Watchify/Watchify.xcodeproj) contains Swift source and a shared scheme. The app presents the canonical interface in a persistent WKWebView, so the screens, calculations, collection records and account flows stay consistent with the website. Swift supplies native PDF/CSV/backup sharing, connection/retry states, foreground refresh and a privacy cover when inactive. Photo selection uses the iPhone's system chooser. No second Supabase database or native account copy is introduced.
 
 An open, visible session checks for another device's saved version every **15 seconds**, and checks again on focus, foreground entry or reconnection. Autosave remains debounced at 650 ms. The incoming workspace is adopted only when there are no unsaved local edits, open edit forms, active uploads or exports. Active forms and conflicting versions are kept for explicit recovery; a refresh never advances the optimistic concurrency version without applying its matching data. This is foreground polling, not a background task or a guarantee of instantaneous delivery. Use the same Watchify account on both devices.
 
 Native exports resolve only after the iOS activity reports completion; cancellation preserves the workspace. Password recovery opens a fixed Watchify page in the default browser so the request and emailed recovery link can use the same browser session. Return to the app and sign in after changing the password.
 
-The app targets **iOS 17 and later**. Building and signing requires a Mac with Xcode; TestFlight distribution additionally needs the owner's Apple Developer/App Store Connect team. No signing team, credentials, signed IPA or TestFlight link is supplied by the source project. The GitHub macOS workflow builds and tests without signing; its result must be verified for the exact commit.
+The app targets **iOS 17 and later**. Building and signing requires a Mac with Xcode; TestFlight distribution additionally needs the owner's Apple Developer/App Store Connect team. No signing team, credentials, signed IPA or TestFlight link is supplied by the source project. The GitHub macOS workflow built and tested this exact release without signing; its successful result is linked above.
 
 ## The 7.0.0 experience
 
@@ -83,7 +85,7 @@ Open `http://127.0.0.1:3000`. Local mode does not automatically use the hosted S
 
 The build command is `npm run build`; output is `dist`. Missing or unsafe Supabase configuration fails the build. Browser libraries are self-hosted. Server code, environment files, tests and documentation are excluded from the public output.
 
-[docs/ZEIT-PREVIEW.md](docs/ZEIT-PREVIEW.md) records the hosting settings and verified 7.0.0 production deployment.
+[docs/ZEIT-PREVIEW.md](docs/ZEIT-PREVIEW.md) records the hosting settings and verified 7.1.0 production deployment, with the 7.0.0 history retained.
 
 ## Verification status
 
@@ -93,13 +95,13 @@ npm test
 npm run build
 ```
 
-The **7.1.0** shared source passed **528/528 tests**, `npm run check`, and the normal static build with the actual public Supabase configuration. New checks cover cloud polling and version adoption, account/edit races, legacy snapshot refusal, native export completion/cancellation, UUID receipts across Swift/JavaScript and fixed browser recovery requests. The 12 native XCTest methods and the iPhone build require the macOS workflow; JavaScript success alone is not an iOS compilation result. Current evidence is in [docs/RELEASE-7.1.0-CHECKS.json](docs/RELEASE-7.1.0-CHECKS.json).
+The **7.1.0** shared source passed **528/528 tests**, `npm run check`, and the normal static build with the actual public Supabase configuration. New checks cover cloud polling and version adoption, account/edit races, legacy snapshot refusal, native export completion/cancellation, UUID receipts across Swift/JavaScript and fixed browser recovery requests. The separate macOS workflow then passed all **12 native XCTest methods** on an iPhone SE simulator with iOS 26.2 and compiled the unsigned iPhone Release app. Current evidence is in [docs/RELEASE-7.1.0-CHECKS.json](docs/RELEASE-7.1.0-CHECKS.json).
 
 The previous 7.0.0 source passed 477 tests, including 19 PDF and app-mount tests for 100-watch reports, purchase corrections, real PDF output and account-change cancellation. The following browser review remains historical 7.0.0 evidence until new checks are recorded.
 
 Desktop browser review on isolated, disposable local-state previews covered collection creation without a photo or AI, market and alert navigation, Analytics periods and indices, purchase-cost coverage/corrections, brand drill-down, trading context and a real PDF download with correct items and totals. On the production URL, the 7.0.0 Auth design and Create account/Back to sign in navigation were checked.
 
-The remaining verification limits are explicit: no real production signup/sign-in, cloud save/reload or two-account workflow was exercised; password recovery delivery and redirects remain unverified. Mobile visual review was not completed, and the browser photo-upload check did not complete. Market data remains illustrative and no daily feed, email digest or push service is connected.
+The remaining verification limits are explicit: no real production signup/sign-in, cloud save/reload or two-device account workflow was exercised. The browser recovery request screen was checked in 7.1.0, while email delivery and the completed reset callback remain unverified. Physical-iPhone visual, photo and sharing interactions have not been exercised; automated native policy tests are distinct from those checks. Market data remains illustrative and no daily feed, email digest or push service is connected.
 
 [docs/RELEASE-7.0.0-CHECKS.json](docs/RELEASE-7.0.0-CHECKS.json) records this release’s evidence and limits. The [6.4.3 report](docs/RELEASE-6.4.3-CHECKS.json) and earlier reports remain historical evidence and are not rewritten as 7.0.0 results. Documentation updates after the deployed source commit do not change the runtime build.
 

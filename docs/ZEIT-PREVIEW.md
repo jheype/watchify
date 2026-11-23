@@ -1,6 +1,18 @@
-# Watchify 7.0.0 preview for Zeit
+# Watchify 7.1.0 preview for Zeit
 
 The 7.0.0 source redesigns Watchify around collection, pricing and Analytics, following the supplied Valure App Direction and Valure Analytics briefs. **Watchify remains the product name.** The hosted build retains Supabase account access and private saved workspaces. The local Node integration server remains a separate development tool.
+
+## 7.1.0 shared web and iPhone release
+
+The current canonical site is **7.1.0**, deployed as `dpl_BDWTHjWbWMd9U54UKjLjJK9S3oP1` with Vercel status **READY**. Its source commit is [`fc8c303c214debdf1e26797db23d85fa15901c81`](https://github.com/jheype/watchify/commit/fc8c303c214debdf1e26797db23d85fa15901c81), tree `28556e1b3f55688e8837301262aca2d502cb1a52`; the immutable deployment is [watchify-ofpeuiepk-jheypes-projects.vercel.app](https://watchify-ofpeuiepk-jheypes-projects.vercel.app/). The web upload contains 161 matching source files, excluding only the native app and GitHub workflow directories from the full 181-file Git tree.
+
+The same Supabase project and account isolation are retained. Visible, clean sessions poll for another device's saved workspace every 15 seconds and check on focus, foreground entry or reconnection. Active forms, unsaved changes, uploads, exports and conflicting versions prevent incoming replacement. No database, policy, email-confirmation or pricing-service setting changed.
+
+The SwiftUI/WebKit app presents the same canonical interface and adds native sharing and lifecycle handling. [Its Xcode 26.3 CI run](https://github.com/jheype/watchify/actions/runs/45209955048) passed 12 native tests on an iPhone SE simulator with iOS 26.2 and the unsigned Release device build. A signed archive and the owner's Apple Developer/App Store Connect team are still needed to distribute it through TestFlight. See [the iPhone guide](../ios/Watchify/README.md).
+
+For this release, 528 Node tests, JavaScript syntax checks and the normal static build passed. Production HTTP checks confirm the native bridge and cloud-refresh scripts match the committed source byte for byte, along with the expected public Supabase runtime configuration and headers. Browser review confirmed 7.1.0 login/signup navigation and that the fixed recovery URL opens an email-reset request form and removes its query parameter. No real account, outgoing recovery email, physical iPhone or live two-device save was exercised. Evidence is in [RELEASE-7.1.0-CHECKS.json](RELEASE-7.1.0-CHECKS.json).
+
+The sections below retain the 7.0.0 design and verification history. They are not additional 7.1.0 account-test results.
 
 ## 7.0.0 published release
 

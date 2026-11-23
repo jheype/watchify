@@ -3,7 +3,7 @@
   "native_version": "1.0",
   "native_build": 1,
   "prepared_at_utc": "2026-11-23T15:50:18.661449+00:00",
-  "state": "source_validated_awaiting_publication_and_xcode",
+  "state": "published_web_ready_native_ci_passed_unsigned",
   "scope": {
     "interface": "Same canonical Watchify web interface hosted in SwiftUI/WKWebView",
     "canonical_url": "https://watchify-azure.vercel.app/",
@@ -53,7 +53,7 @@
     "static_build": "passed with existing public Supabase configuration",
     "xcode_project_plist_scheme_workflow_structure": "passed",
     "native_policy_test_methods": 12,
-    "native_build_and_test_status": "not_run_yet; macOS GitHub workflow prepared",
+    "native_build_and_test_status": "passed in GitHub Actions on exact published source commit",
     "icon": {
       "width": 1024,
       "height": 1024,
@@ -64,7 +64,35 @@
     "real_account_cross_device_sync": "not performed",
     "camera_photo_selection_on_ios": "not performed",
     "native_share_sheet_on_ios": "not performed",
-    "password_recovery_email_delivery": "not performed"
+    "password_recovery_email_delivery": "not performed",
+    "git_diff_check": "passed including all staged new files",
+    "native_ci": {
+      "run_id": 45209955048,
+      "url": "https://github.com/jheype/watchify/actions/runs/45209955048",
+      "commit": "fc8c303c214debdf1e26797db23d85fa15901c81",
+      "conclusion": "success",
+      "xcode": "26.3",
+      "xcode_build": "17C529",
+      "simulator": "iPhone SE (3rd generation), iOS 26.2",
+      "tests": 12,
+      "failures": 0,
+      "test_result": "TEST SUCCEEDED",
+      "unsigned_iphone_release_build": "BUILD SUCCEEDED",
+      "artifact": {
+        "id": 14835558810,
+        "url": "https://github.com/jheype/watchify/actions/runs/45209955048/artifacts/14835558810",
+        "bytes": 5594627,
+        "expires_on": "2026-11-30",
+        "contents": [
+          "WatchifyTests.xcresult",
+          "Watchify-Simulator.zip"
+        ],
+        "physical_iphone_installable": false,
+        "expires_at": "2026-11-30T15:57:48Z",
+        "digest": "sha256:b37617501287a32ed31e93a5bae1b959f699ebbbdb39da5b311ef60f95d52916"
+      },
+      "observed_at_utc": "2026-11-23T15:59:04.625Z"
+    }
   },
   "distribution": {
     "signed_ipa": false,
@@ -82,5 +110,182 @@
     "Polling runs only while visible and clean; simultaneous edits are preserved as conflicts, not merged.",
     "Internet is required for first load and cloud access. No background sync or full offline workflow is promised.",
     "Pricing and market data retain the existing illustrative dataset."
-  ]
+  ],
+  "verified_at_utc": "2026-11-23T15:59:31.914761+00:00",
+  "publication": {
+    "version": "7.1.0",
+    "published_at_utc": "2026-11-23T15:51:59.863Z",
+    "remote_commit": "fc8c303c214debdf1e26797db23d85fa15901c81",
+    "remote_parent": "7173b6c9bd5ac0cb310c0bc88e2d2cbd4362828e",
+    "local_commit": "f0657834a6692e369f0acdd80840a11b3f4632fe",
+    "tree": "28556e1b3f55688e8837301262aca2d502cb1a52",
+    "files": 181,
+    "changed_or_new_files": 36,
+    "full_recursive_tree_identical": true,
+    "binary_verified": {
+      "path": "ios/Watchify/Watchify/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4e2bbe4abb92cfb85bdc54d01d266c695d0db151"
+    },
+    "workflow_included": {
+      "path": ".github/workflows/watchify-ios.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d3025280749df24dc38dc8747a9446d1f1babdaa"
+    },
+    "force": false,
+    "expected_sha": "7173b6c9bd5ac0cb310c0bc88e2d2cbd4362828e",
+    "worktree_clean": true,
+    "url": "https://github.com/jheype/watchify/commit/fc8c303c214debdf1e26797db23d85fa15901c81",
+    "actions": {
+      "run_id": 45209955048,
+      "url": "https://github.com/jheype/watchify/actions/runs/45209955048",
+      "status": "completed",
+      "conclusion": "success",
+      "native_tests": {
+        "suite": "WatchifyNativePolicyTests",
+        "executed": 12,
+        "failures": 0,
+        "unexpected": 0,
+        "result": "TEST SUCCEEDED"
+      },
+      "device_release_build": "BUILD SUCCEEDED, unsigned"
+    }
+  },
+  "production": {
+    "deploymentId": "dpl_BDWTHjWbWMd9U54UKjLjJK9S3oP1",
+    "url": "https://watchify-ofpeuiepk-jheypes-projects.vercel.app",
+    "canonicalUrl": "https://watchify-azure.vercel.app/",
+    "aliases": [
+      "watchify-azure.vercel.app",
+      "watchify-jheypes-projects.vercel.app"
+    ],
+    "state": "READY",
+    "target": "production",
+    "release": "7.1.0",
+    "githubCommit": "fc8c303c214debdf1e26797db23d85fa15901c81",
+    "sourceTree": "28556e1b3f55688e8837301262aca2d502cb1a52",
+    "localCommit": "f0657834a6692e369f0acdd80840a11b3f4632fe",
+    "fullGitTreeFileCount": 181,
+    "webSourceFileCount": 161,
+    "excludedPatterns": [
+      "ios/**",
+      ".github/**"
+    ],
+    "excludedFileCount": 20,
+    "webSubsetFingerprint": "6e56e544972b3fe99cfe75d29ffa32274462a6fa99d501925fd058cb23287f0a",
+    "sourceFilesVerifiedAgainstGitTree": true,
+    "canonicalDeploymentVerified": true,
+    "normalProductionBuild": true,
+    "qaOverrides": false,
+    "nodeVersion": "22.x",
+    "ssoProtection": {
+      "enabled": true,
+      "deploymentType": "all_except_custom_domains"
+    },
+    "httpChecks": {
+      "index": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 2820,
+        "contentType": "text/html; charset=utf-8",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "expectedScripts": true,
+        "expectedStyles": true,
+        "expectedSupabaseCsp": true
+      },
+      "bridge": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 6495,
+        "contentType": "application/javascript; charset=utf-8",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "exactFrozenSourceMatch": true
+      },
+      "cloud": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 16310,
+        "contentType": "application/javascript; charset=utf-8",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "exactFrozenSourceMatch": true
+      },
+      "runtime": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 252,
+        "contentType": "application/javascript; charset=utf-8",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "expectedSupabaseProject": true,
+        "publishableKeyPresent": true,
+        "liveIntegrationsDisabled": true,
+        "expectedMode": true,
+        "hasServiceRoleText": false
+      }
+    },
+    "browserQaReportedByRoot": {
+      "platform": "desktop browser; not iPhone",
+      "loginVersion710Passed": true,
+      "signupNavigationPassed": true,
+      "resetAccessQueryOpensRequestForm": true,
+      "resetQueryRemovedAfterNavigation": true,
+      "backToSignInPassed": true,
+      "charcoalGoldDesignPreserved": true,
+      "credentialsEntered": false,
+      "accountCreated": false,
+      "emailRequested": false
+    },
+    "nativeIosBuild": "separate GitHub Actions run; status not asserted by web deployment verification",
+    "baselineDeployment": "dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv",
+    "verifiedAt": "2026-11-23T15:54:52.561806+00:00"
+  },
+  "production_browser_review": {
+    "surface": "cloud Chrome desktop browser",
+    "visible_version": "7.1.0",
+    "login_screen": "passed",
+    "signup_form_navigation": "passed",
+    "native_fixed_recovery_url": "https://watchify-azure.vercel.app/?watchify_access=reset",
+    "fixed_url_opens_email_reset_request_not_password_update": "passed",
+    "query_removed_from_address": "passed",
+    "return_to_sign_in": "passed",
+    "same_charcoal_gold_visual_direction": "observed in screenshot of recovery screen",
+    "credentials_entered": false,
+    "account_created": false,
+    "email_requested": false,
+    "native_ios_or_mobile_viewport": false
+  },
+  "documentation_followup": "This evidence update changes documentation only. Production and the successful native CI run use the exact runtime source commit recorded above."
 }

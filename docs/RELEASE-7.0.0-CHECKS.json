@@ -1,8 +1,8 @@
 {
   "version": "7.0.0",
-  "release_state": "prepublication",
+  "release_state": "published",
   "prepared_at_utc": "2026-11-23T04:44:30.977817+00:00",
-  "verification_status": "Integrated 477-test suite, JavaScript syntax, normal authenticated static build and git diff checks passed. Desktop browser portfolio and Analytics interactions, a real PDF download and PDF rendering passed on the isolated QA deployment. Source publication and production readback are the remaining release steps.",
+  "verification_status": "Watchify 7.0.0 is published on GitHub and READY in Vercel production. The exact 158-file source tree was verified. All 477 automated tests, syntax, authenticated static build and diff checks passed. Isolated desktop collection/Analytics/PDF interactions passed; production login and signup form navigation were visually checked without credentials or account creation.",
   "release_scope": {
     "direction_source": "User-provided Valure App Direction.pdf and Valure Analytics.pdf; Valure is the former working name",
     "product_name": "Watchify",
@@ -219,19 +219,118 @@
         "checks": "Downloaded using the visible Watchify button; parsed and rendered without clipping, missing references or total discrepancies"
       }
     },
-    "git_diff_check": "passed"
+    "git_diff_check": "passed",
+    "production_http_checks": {
+      "index": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 2767,
+        "contentType": "text/html; charset=utf-8",
+        "etag": "W/\"cd3e14c9145b9dcf66756d2b0691b750\"",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "expectedScripts": true,
+        "expectedStyles": true,
+        "connectsOnlyExpectedSupabase": true
+      },
+      "analytics": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 14147,
+        "contentType": "application/javascript; charset=utf-8",
+        "etag": "W/\"d85d0916ec436c36eb5396cf456f0469\"",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "exactFrozenSourceMatch": true
+      },
+      "pdf": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 526348,
+        "contentType": "application/javascript; charset=utf-8",
+        "etag": "W/\"6e5ebeaf3a9cf56b0c161692c5611516\"",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "exactFrozenSourceMatch": true
+      },
+      "runtime": {
+        "status": 200,
+        "success": true,
+        "bodyLength": 252,
+        "contentType": "application/javascript; charset=utf-8",
+        "etag": "\"f5a41a4cedb9ae61d1c80f75274bb95e\"",
+        "headers": {
+          "csp": "frame-ancestors 'none'",
+          "frame": "DENY",
+          "contentTypeOptions": "nosniff",
+          "robots": "noindex, nofollow, noarchive",
+          "referrer": "no-referrer",
+          "permissions": "camera=(), microphone=(), geolocation=(), payment=()",
+          "cacheControl": "public, max-age=0, must-revalidate"
+        },
+        "expectedSupabaseProject": true,
+        "publishableKeyPresent": true,
+        "liveIntegrationsDisabled": true,
+        "expectedMode": true,
+        "hasServiceRoleText": false
+      }
+    },
+    "production_browser_review": {
+      "canonical_url": "https://watchify-azure.vercel.app/",
+      "visible_version": "7.0.0",
+      "login_screen": "passed",
+      "signup_form_navigation": "passed",
+      "return_to_sign_in": "passed",
+      "screenshots_reviewed": true,
+      "credentials_entered": false,
+      "account_created": false,
+      "new_private_collection_data_entered": false
+    },
+    "published_source_integrity": {
+      "github_commit": "24bbfd2d80f4eef66e8f5654e77b7639524f4bbb",
+      "git_tree": "a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12",
+      "files": 158,
+      "local_and_remote_tree_identical": true,
+      "analytics_and_pdf_vendor_http_exact_content_match": true
+    }
   },
   "source_control": {
     "github_repository": "https://github.com/jheype/watchify",
     "github_visibility": "public",
-    "release_7_0_0_published": false,
+    "release_7_0_0_published": true,
     "starting_local_commit": "fcf2ce645415e96064d9ac9a0c728a7e9b8019ec",
     "starting_remote_main_commit": "b15f807f3bba5f43da5b65c1894e7c4ef03ae0e0",
     "starting_tree": "195e9ee9b0b4727bc5939f7eaf304552f648df22",
     "starting_local_and_remote_trees_identical": true,
     "publication_method": "Git Data API; verify immutable local tree, preserve remote parent and update main with expected_sha and force=false",
-    "final_source_commit": null,
-    "final_source_tree": null
+    "final_source_commit": "24bbfd2d80f4eef66e8f5654e77b7639524f4bbb",
+    "final_source_tree": "a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12",
+    "local_equivalent_source_commit": "ab9b6716e31c286656fee15a795c8ede97911afd",
+    "verified_source_files": 158,
+    "publication_parent": "b15f807f3bba5f43da5b65c1894e7c4ef03ae0e0",
+    "expected_sha_and_no_force_verified": true,
+    "documentation_followup": "This post-publication evidence update is documentation only; the production runtime remains the verified source commit above."
   },
   "production_baseline": {
     "version": "6.4.3",
@@ -251,10 +350,27 @@
     "historical_checks_file": "docs/RELEASE-6.4.3-CHECKS.json"
   },
   "release_7_0_0_deployment": {
-    "status": "Not deployed",
-    "id": null,
-    "source_commit": null,
-    "source_tree": null
+    "status": "READY",
+    "target": "production",
+    "id": "dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv",
+    "canonical_url": "https://watchify-azure.vercel.app/",
+    "immutable_url": "https://watchify-c3ua6pcft-jheypes-projects.vercel.app",
+    "aliases": [
+      "watchify-azure.vercel.app",
+      "watchify-jheypes-projects.vercel.app"
+    ],
+    "source_commit": "24bbfd2d80f4eef66e8f5654e77b7639524f4bbb",
+    "source_tree": "a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12",
+    "source_files": 158,
+    "method": "Official Vercel files deployment API",
+    "normal_authenticated_build": true,
+    "qa_overrides": false,
+    "sso_protection": {
+      "enabled": true,
+      "deploymentType": "all_except_custom_domains"
+    },
+    "canonical_deployment_verified": true,
+    "verified_at_utc": "2026-11-23T04:54:13.383444+00:00"
   },
   "supabase": {
     "project": "Watchify (iqfsalmepkcjawyukiie)",
@@ -283,13 +399,15 @@
       "status": "Incomplete: hosted execution returned no result before cancellation",
       "success_claimed": false,
       "result_file": "supabase/tests/public_account_validation_result.json"
+    },
+    "published_runtime_verification": {
+      "expected_project": true,
+      "public_publishable_key": true,
+      "normal_authenticated_mode": true,
+      "schema_or_auth_setting_changed": false
     }
   },
-  "pending_before_completion": [
-    "Publish and verify the exact final GitHub tree",
-    "Deploy the validated source and verify version 7.0.0 at the canonical URL",
-    "Visually verify the deployed Auth entry screen without changing account settings"
-  ],
+  "pending_before_completion": [],
   "analytics_checkpoint_at_utc": "2026-11-23T04:39:48.072831+00:00",
   "verification_limits": [
     "Real-account signup/sign-in, cloud save/reload and recovery email delivery were not re-run in this redesign",
@@ -297,5 +415,6 @@
     "Phone viewport and browser photo upload are not claimed as visually verified",
     "Sample prices, indices, liquidity, supply and fixed FX rates are not a live data feed",
     "No scheduled market ingestion or email digest delivery is connected"
-  ]
+  ],
+  "published_verified_at_utc": "2026-11-23T04:54:13.383444+00:00"
 }

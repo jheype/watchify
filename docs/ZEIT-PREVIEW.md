@@ -2,36 +2,34 @@
 
 The 7.0.0 source redesigns Watchify around collection, pricing and Analytics, following the supplied Valure App Direction and Valure Analytics briefs. **Watchify remains the product name.** The hosted build retains Supabase account access and private saved workspaces. The local Node integration server remains a separate development tool.
 
-## 7.0.0 release checkpoint
+## 7.0.0 published release
 
-**Prepared locally; final validation and publication pending.** Collection, Market, Analytics, Add a watch and Alerts form the new interface. The old commerce modules and valid saved data remain for compatibility, but their buying, selling, offers, orders and payment screens are not mounted. No prior valid workspace is intentionally deleted or converted into a portfolio holding.
+**Published to GitHub and deployed to production; Vercel status READY.** Collection, Market, Analytics, Add a watch and Alerts form the new interface. The old commerce modules and valid saved data remain for compatibility, but their buying, selling, offers, orders and payment screens are not mounted. No prior valid workspace is intentionally deleted or converted into a portfolio holding.
 
 Every value, range, historical series, movement and UK/US/Hong Kong comparison is **illustrative sample data as of 20 November 2026**. The portfolio model uses GBP as its base. GBP, USD and EUR display choices use fixed illustrative exchange rates, and every regional comparison uses the same selected display currency. There is no live pricing backend. The digest and alerts are in-app sample views; no scheduled digest, email, push or external notification is sent.
 
-The Auth screens are restyled for the new visual direction and display 7.0.0. Their existing session verification, recovery and cloud-save lifecycle are unchanged. A version badge or successful local test is not evidence that the release is deployed or that a real account flow has passed.
+The Auth screens are restyled for the new visual direction and display 7.0.0. Their existing session verification, recovery and cloud-save lifecycle are unchanged. The canonical production page and its Create account/Back to sign in navigation were visually checked on 23 November 2026. No real account was registered or signed in during that check, so it is not an end-to-end account result.
 
-### Analytics behaviour in the pending release
+### Analytics behaviour
 
 Optional purchase prices and purchase months can be recorded when adding a piece and edited later. Gain cards explicitly report partial cost coverage; unknown prices are excluded and zero cost never produces an invented percentage. Collection comparisons and Market indices share the same fixed sample basket. The portfolio chart rebases both series for its period, while the index page retains the common historical origin and exposes weights/contributions. Brand allocation opens the relevant private holdings. Liquidity and supply are dated illustrative context, not observed transactions or active offers. Market movers cover week/month/year periods and show up to ten matching results, bounded by the eight-reference sample catalogue.
 
 The valuation action generates an actual PDF in the browser using the local `pdf-lib` 1.17.1 bundle. It includes every selected collection piece (up to 100), specification, value/range, totals, source date and download time. Serials appear only if entered; the report is marked “Illustrative estimate · not a formal appraisal” and discloses the absence of a live feed. GBP is the base, with selected GBP/USD/EUR presentation and an explicit fixed illustrative conversion rate where relevant. No report data is sent to another service. The generated download is cancelled after a session, collection, name, currency or page lifecycle change. The public bundle carries the full MIT notice; no CDN, runtime fetch or new server route is needed. Portuguese accents are supported and unsupported characters fail clearly before a PDF is downloaded.
 
-## Last verified production deployment (6.4.3)
-
-The following is the production baseline verified before the redesign, not a 7.0.0 deployment:
+## Verified production deployment (7.0.0)
 
 - **Canonical public URL:** [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/)
 - Additional alias: [https://watchify-jheypes-projects.vercel.app/](https://watchify-jheypes-projects.vercel.app/)
-- Immutable deployment URL: [https://watchify-bdhs11b68-jheypes-projects.vercel.app/](https://watchify-bdhs11b68-jheypes-projects.vercel.app/)
-- Deployment ID: `dpl_2BH1KQrpwgfcUsPHzprefchkrAXm`; Vercel status **READY**.
-- Deployed GitHub source commit: [`171f6b0b4a43565538476b2e874b01bbd2e76eb3`](https://github.com/jheype/watchify/commit/171f6b0b4a43565538476b2e874b01bbd2e76eb3).
-- Deployed source tree: `7173259d7519e8f6928d4f699f072d50cfa8f6d1`, containing all 142 tracked source files.
+- Immutable deployment URL: [https://watchify-c3ua6pcft-jheypes-projects.vercel.app/](https://watchify-c3ua6pcft-jheypes-projects.vercel.app/)
+- Deployment ID: `dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv`; Vercel status **READY**.
+- Deployed GitHub source commit: [`24bbfd2d80f4eef66e8f5654e77b7639524f4bbb`](https://github.com/jheype/watchify/commit/24bbfd2d80f4eef66e8f5654e77b7639524f4bbb).
+- Deployed source tree: `a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12`, containing all 158 tracked source files.
 
-The deployment and alias were checked again before the 7.0.0 changes; the remote GitHub tree matched the local starting tree. The historical 6.4.3 browser check showed a public page without Vercel login, version 6.4.3 and a Create account form. Its independent HTTP check returned `200` for the frontend, byte-identical Auth/app/cloud scripts and the intended Supabase runtime configuration. `/server/start.cjs`, `/.env` and `/api/health` returned `404`, and both private tables denied anonymous REST reads with HTTP `401` / code `42501`.
+The GitHub recursive tree was compared with the committed local tree: every tracked path, file mode, type and blob SHA matched. The production deployment uses the normal authenticated build, rather than the isolated local-state QA variant. The public canonical page displays 7.0.0 and the expected account views. The release report records the deployment readback and any independent HTTP evidence separately.
 
-These are delivery and access-boundary checks from the previous release. They do not establish real-account signup, password recovery, two-account separation or persistence in the redesigned interface. Preserve the complete historical evidence in `docs/RELEASE-6.4.3-CHECKS.json`.
+Version 6.4.3 remains the historical baseline in `docs/RELEASE-6.4.3-CHECKS.json`; its earlier HTTP and database-boundary results are not relabelled as 7.0.0 account tests. Neither a READY deployment nor a visible registration form establishes real-account signup, password recovery, two-account separation or cloud persistence.
 
-Native Vercel access is authorised for the owner-confirmed `jheypes-projects` team. The established deployment used the official files API. Automatic GitHub deployment was not connected in that release; publishing a repository commit alone must not be reported as a site update.
+Native Vercel access is authorised for the owner-confirmed `jheypes-projects` team. Version 7.0.0 used the official files API. Automatic GitHub deployment is not connected; a later documentation commit does not rebuild or alter the deployed application.
 
 ## Hosting configuration
 
@@ -60,7 +58,7 @@ The build rejects missing configuration, a nonstandard HTTPS Supabase origin, a 
 
 The output contains `index.html`, `robots.txt`, permitted `src`/`assets` files, the self-hosted Supabase browser bundle and the locally vendored PDF library. The repository root, Node server, environment files, tests, dependency tree and documentation are excluded. The PDF library’s complete MIT notice is also embedded in its JavaScript file so it accompanies the public build. Symlinks in public source trees fail the build.
 
-The generated page permits browser connections only to its own origin and the configured Supabase project. Response headers prevent embedding and MIME sniffing, suppress referrers and request exclusion from indexing. Indexing directives do not make a URL private. The app retains its account gate; the final deployment must be verified separately.
+The generated page permits browser connections only to its own origin and the configured Supabase project. Response headers prevent embedding and MIME sniffing, suppress referrers and request exclusion from indexing. Indexing directives do not make a URL private. The public app retains its account gate; live account and persistence workflows remain a separate verification step.
 
 Navigation uses hashes. Unknown paths are not rewritten to `index.html`, and `/api/*` local integration routes are not deployed. A source upload does not establish an external pricing feed or email-digest backend.
 
@@ -74,20 +72,20 @@ The owner requested public email signup with confirmation disabled (`mailer_auto
 
 Password recovery needs a working email provider and the correct Auth Site URL and allowed redirects for `https://watchify-azure.vercel.app/`. The app passes its origin and pathname as the callback URL. PKCE recovery links must be opened in the same browser that requested them. Do not assume disabling signup confirmation configures recovery delivery or confirms existing accounts. See [SUPABASE_PREVIEW.md](SUPABASE_PREVIEW.md) for supported administration and verification limits.
 
-## 7.0.0 validation still to complete
+## 7.0.0 verification and remaining limits
 
-Targeted model/snapshot and Auth runs have passed. The PDF and app-mount run passed **19 tests**, covering real PDF output, all 100 collection entries, purchase corrections, empty Analytics, index/trading navigation and cancellation of late report results or errors after a session or page change. Poppler-rendered report fixtures have been checked separately. The final complete suite, static build and integrated desktop/mobile review must still be recorded; the earlier failed Chromium launch is historical and not a visual pass.
+The final integrated source passed **477/477 tests**, `npm run check`, the normal static build with the actual public Supabase configuration, and the Git whitespace check. The suite includes **19 PDF/app-mount tests**, covering real PDF output, all 100 collection entries, purchase corrections, empty Analytics, index/trading navigation and cancellation of late report results or errors after a session or page change.
 
-Before publication, validate the integrated source and build with the actual public Supabase configuration. After deployment, check:
+Desktop browser review on isolated, disposable local-state QA deployments covered collection/watch details, manual add without a photo or AI, list/grid/currency choices, market/alerts, Analytics empty/owned states, all four periods, overall and brand indices, purchase-cost editing, brand drill-down, Trading and a real valuation download. The two-watch PDF contained the correct £17,182 total. Synthetic reports with up to 100 pieces were parsed and rendered successfully with system Poppler. A defect in the runtime’s bundled Poppler font substitution affected its PNG output; the identical PDF rendered correctly with `/usr/bin/pdftoppm` and required no generator change.
 
-1. The final 7.0.0 version and exact source are served at the canonical URL.
-2. Collection totals, value ranges, charts, period changes, regional rows, market filters and owned/followed markers are consistent and labelled illustrative. Analytics costs, partial coverage, same-basket benchmark, brand drill-down, indices and sample trading context remain coherent.
-3. Add a watch works with the four required choices and optional details, purchase details can be corrected, and collection records, followed references, alerts and preferences survive saving and reload. Download a real valuation PDF and verify its dates, items, totals and optional serials.
-4. Older valid workspaces restore without deleting legacy business data or mounting commerce screens. Malformed or unsupported portfolio snapshots fail explicitly.
-5. Login, signup, sign-out, recovery, interrupted saves, conflict recovery and account separation work on the actual deployment. Verify current Auth settings and recovery delivery separately.
-6. Frontend assets render at desktop and mobile sizes; excluded server/environment routes remain unavailable, and anonymous private-table access is denied.
+The canonical production page was separately checked for the 7.0.0 Auth design and Create account/Back to sign in navigation. The following remain unverified:
 
-Record final source, build, visual, deployment and account evidence in `docs/RELEASE-7.0.0-CHECKS.json`. Do not mark publication or end-to-end verification complete before those results exist. The historical 24-group public-account SQL run returned no execution result and remains incomplete; this redesign does not turn it into a pass.
+1. Real production signup/sign-in, cloud save/reload, sign-out and two-account separation. Controlled fixtures and local-state UI checks do not establish these live-account outcomes.
+2. Current Supabase confirmation settings, recovery redirect configuration and actual password-recovery delivery to external recipients.
+3. Mobile visual behaviour on a narrow viewport or phone. Responsive styles were implemented and reviewed, but browser zoom did not change the available test viewport.
+4. The browser photo-upload path. The earlier chooser interaction timed out; no visual upload pass is claimed.
+
+Source, build, visual and deployment evidence belongs in `docs/RELEASE-7.0.0-CHECKS.json`, with account checks recorded only when exercised. Publication is complete; live-account end-to-end verification is not claimed. The historical 24-group public-account SQL run returned no execution result and remains incomplete. Prices, indices, liquidity and supply remain illustrative; there is no live pricing feed, daily refresh job, email digest or push delivery.
 
 ## References
 

@@ -2,7 +2,9 @@
 
 Watchify is a collector’s app for understanding the watches you own: your collection, value ranges, price history and market context. Version 7.0.0 follows the supplied **Valure App Direction** and **Valure Analytics** briefs, with **Watchify** retained as the product name. Valure was the briefs’ former working name.
 
-**Release state: prepared locally; final validation and publication are pending.** The existing public URL is [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/). The last deployment verified before this redesign is version **6.4.3**; this document does not claim that 7.0.0 is live.
+**Release state: 7.0.0 published and deployed.** Open [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/). Vercel reported deployment `dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv` **READY**, and the canonical site was visually checked on 23 November 2026: it displays Watchify 7.0.0 and opens the Create account and Back to sign in views. No real account was created or signed in during that production check.
+
+The deployed source is GitHub commit [`24bbfd2d80f4eef66e8f5654e77b7639524f4bbb`](https://github.com/jheype/watchify/commit/24bbfd2d80f4eef66e8f5654e77b7639524f4bbb), tree `a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12`, with all 158 tracked files verified against the local source. Its immutable deployment URL is [watchify-c3ua6pcft-jheypes-projects.vercel.app](https://watchify-c3ua6pcft-jheypes-projects.vercel.app/).
 
 ## The 7.0.0 experience
 
@@ -64,12 +66,12 @@ Open `http://127.0.0.1:3000`. Local mode does not automatically use the hosted S
 2. Configure the desired Auth behaviour and verify the canonical Site URL and recovery redirects. Configure an email provider separately if password recovery must deliver to external addresses.
 3. Set `WATCHIFY_SUPABASE_URL` and `WATCHIFY_SUPABASE_PUBLISHABLE_KEY` for the build. These are public browser configuration; never substitute a secret or service-role key.
 4. Run the source checks and static build, then publish the exact validated source tree to [jheype/watchify](https://github.com/jheype/watchify).
-5. Deploy the complete tracked source through Vercel’s files API using the committed `vercel.json`. The established deployment route does not depend on a Git integration. Automatic GitHub deployments were not connected in the last verified release.
-6. Verify the deployed version, portfolio flows, authentication, saving/reload and separation between accounts before reporting the release complete.
+5. Deploy the complete tracked source through Vercel’s files API using the committed `vercel.json`. Version 7.0.0 used this route; automatic GitHub deployments are not connected, so a later repository commit does not automatically update the site.
+6. Verify the deployed version and record exactly which portfolio, account, saving/reload and separation checks have been completed. A successful build or visible account form does not establish a live-account workflow.
 
 The build command is `npm run build`; output is `dist`. Missing or unsafe Supabase configuration fails the build. Browser libraries are self-hosted. Server code, environment files, tests and documentation are excluded from the public output.
 
-[docs/ZEIT-PREVIEW.md](docs/ZEIT-PREVIEW.md) records the hosting settings and last verified production deployment.
+[docs/ZEIT-PREVIEW.md](docs/ZEIT-PREVIEW.md) records the hosting settings and verified 7.0.0 production deployment.
 
 ## Verification status
 
@@ -79,9 +81,13 @@ npm test
 npm run build
 ```
 
-The build requires the two public Supabase variables. The Analytics checkpoint includes targeted model/snapshot, Auth, PDF and actual app-mount tests. The PDF and mount run passed **19 tests**, including a 100-watch report, real PDF download, purchase correction and account-change cancellation. Final integrated checks, visual review and production verification remain to be recorded in the release report. Controlled tests do not establish a successful live signup or cloud workspace session.
+The final integrated source passed **477/477 tests**, `npm run check`, the normal static build with the actual public Supabase configuration, and the Git whitespace check. That suite includes the 19 PDF and app-mount tests for 100-watch reports, purchase corrections, real PDF output and account-change cancellation.
 
-[docs/RELEASE-7.0.0-CHECKS.json](docs/RELEASE-7.0.0-CHECKS.json) is the prepublication record for this redesign. The [6.4.3 report](docs/RELEASE-6.4.3-CHECKS.json) and earlier reports remain historical evidence and are not rewritten as 7.0.0 results.
+Desktop browser review on isolated, disposable local-state previews covered collection creation without a photo or AI, market and alert navigation, Analytics periods and indices, purchase-cost coverage/corrections, brand drill-down, trading context and a real PDF download with correct items and totals. On the production URL, the 7.0.0 Auth design and Create account/Back to sign in navigation were checked.
+
+The remaining verification limits are explicit: no real production signup/sign-in, cloud save/reload or two-account workflow was exercised; password recovery delivery and redirects remain unverified. Mobile visual review was not completed, and the browser photo-upload check did not complete. Market data remains illustrative and no daily feed, email digest or push service is connected.
+
+[docs/RELEASE-7.0.0-CHECKS.json](docs/RELEASE-7.0.0-CHECKS.json) records this release’s evidence and limits. The [6.4.3 report](docs/RELEASE-6.4.3-CHECKS.json) and earlier reports remain historical evidence and are not rewritten as 7.0.0 results. Documentation updates after the deployed source commit do not change the runtime build.
 
 ## Project structure
 

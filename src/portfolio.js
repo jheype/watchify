@@ -47,7 +47,7 @@
     const modelAPI=root.WatchifyPortfolioModel;
     if(!modelAPI || !root.WatchifyPortfolioViews || !root.WatchifyAnalyticsModel || !root.WatchifyAnalyticsViews || !root.WatchifyValuationReport) throw new Error('Collection modules are unavailable');
     let toastTimer=null, chartPoints=[], chartGeometry=null, modalFocus=null, uploadGeneration=0, reportGeneration=0;
-    const ui={period:'6M',view:'list',marketTab:'rising',marketBrand:'all',marketQuery:'',marketPeriod:'week',alertTab:'all',analyticsTab:'portfolio',analyticsBrand:'all',analyticsIndex:'all',analyticsWatch:'submariner',reportBusy:false,suggestionIndex:-1,draft:null,uploadBusy:false};
+    const ui={period:'6M',view:'list',marketTab:'rising',marketBrand:'all',marketQuery:'',marketPeriod:'week',alertTab:'all',analyticsTab:'portfolio',analyticsBrand:'all',analyticsIndex:'all',analyticsWatch:'submariner',reportBusy:false,exportBusy:false,suggestionIndex:-1,draft:null,uploadBusy:false};
     const money=value=>root.WatchifyDomain.formatMoney(value,state.currency);
     const moneyExact=value=>{const converted=root.WatchifyDomain.convertMoney(value,state.currency);return new Intl.NumberFormat('en-GB',{style:'currency',currency:state.currency,minimumFractionDigits:Number.isInteger(converted)?0:2,maximumFractionDigits:2}).format(converted);};
     const compact=value=>new Intl.NumberFormat('en-GB',{style:'currency',currency:state.currency,notation:'compact',maximumFractionDigits:1}).format(root.WatchifyDomain.convertMoney(value,state.currency));
@@ -227,7 +227,7 @@
       modal('What you paid.',`<p>${esc(w.brand+' '+w.model)} · ${esc(w.reference)} · ${entry.year}</p><form id="pf-purchase-form"><input type="hidden" name="entryId" value="${esc(entry.id)}"><label>Purchase price · GBP<input name="purchasePriceGBP" type="number" inputmode="decimal" min="0" max="100000000" step="0.01" placeholder="Leave blank if unknown" value="${esc(entry.purchasePriceGBP??'')}"></label><label>Purchase month · optional<input name="purchaseDate" type="month" min="1900-01" max="${new Date().toISOString().slice(0,7)}" value="${esc(entry.purchaseDate||'')}"></label><p class="pf-muted-note">Your entry stays private. Comparisons use the dated sample valuation, and do not include fees, servicing or realised sale proceeds. A blank price removes this watch from purchase-gain calculations.</p><p id="pf-purchase-error" class="pf-form-error" role="alert"></p><div class="pf-button-row"><button type="submit" class="pf-btn pf-btn-primary">Save purchase details ${icon('check')}</button><button type="button" class="pf-btn pf-btn-outline" data-pf-action="close-modal">Cancel</button></div></form>`);
     }
     async function exportValuation() {
-      assertActive();if(ui.reportBusy)return;
+      assertActive();if(ui.reportBusy||ui.exportBusy)return;
       const entries=model.collection();
       if(!entries.length){toast('Add a watch to your collection before downloading a valuation.');return;}
       const generation=++reportGeneration;
@@ -240,21 +240,41 @@
         assertActive();
         if(generation!==reportGeneration)return;
         if(signature()!==captured)throw new Error('Your collection changed while the PDF was prepared. Download a fresh valuation.');
-        const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-        a.href=url;a.download='watchify-collection-valuation-'+new Date().toISOString().slice(0,10)+'.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);
-        toast('Your illustrative valuation PDF has been downloaded.');
-      }catch(error){try{assertActive();if(generation===reportGeneration)fail(error);}catch{}}
+        const filename='watchify-collection-valuation-'+new Date().toISOString().slice(0,10)+'.pdf';
+        if(root.WatchifyNative?.available()) {
+          const result=await root.WatchifyNative.download({data:bytes,mimeType:'application/pdf',filename});
+          if(result?.shared!==true)throw new Error('The PDF was not shared. Your collection is unchanged.');
+          assertActive();if(generation!==reportGeneration)return;
+          toast('Your illustrative valuation PDF has been shared.');
+        } else {
+          const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+          a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);
+          toast('Your illustrative valuation PDF has been downloaded.');
+        }
+      }catch(error){try{assertActive();if(generation===reportGeneration&&error?.code!=='DOWNLOAD_CANCELLED')fail(error);}catch{}}
       finally{if(generation===reportGeneration){ui.reportBusy=false;try{assertActive();if(route()[0]==='analytics')render();}catch{}}}
     }
-    function exportCollection() {
-      assertActive();const entries=model.collection();
+    async function exportCollection() {
+      assertActive();if(ui.exportBusy||ui.reportBusy)return;const entries=model.collection();
       if(!entries.length){toast('Add a watch to your collection before exporting.');return;}
       const cell=value=>'"'+String(value??'').replace(/"/g,'""').replace(/^[=+\-@]/,"'$&")+'"';
       const rows=[['Brand','Model','Reference','Year','Box and papers','Condition','Illustrative value GBP','Low GBP','High GBP','Source date']];
       entries.forEach(entry=>{const w=model.quote(entry);rows.push([w.brand,w.model,w.reference,entry.year,setLabel(entry.set),entry.condition,w.valueGBP,w.lowGBP,w.highGBP,w.asOf]);});
-      const blob=new Blob(['\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
-      const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='watchify-collection.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-      toast('Your collection has been exported.');
+      const contents='\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n');
+      const generation=reportGeneration;ui.exportBusy=true;
+      try {
+        if(root.WatchifyNative?.available()) {
+          const result=await root.WatchifyNative.download({data:new TextEncoder().encode(contents),mimeType:'text/csv',filename:'watchify-collection.csv'});
+          if(result?.shared!==true)throw new Error('The collection export was not shared. Your collection is unchanged.');
+          assertActive();if(generation!==reportGeneration)return;
+          toast('Your collection has been shared.');
+        } else {
+          const blob=new Blob([contents],{type:'text/csv;charset=utf-8'});
+          const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='watchify-collection.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+          toast('Your collection has been exported.');
+        }
+      }catch(error){try{assertActive();if(generation===reportGeneration&&error?.code!=='DOWNLOAD_CANCELLED')fail(error);}catch{}}
+      finally{ui.exportBusy=false;}
     }
     function updateEstimate(){const el=$('#pf-estimate');if(el)el.innerHTML=estimate();}
     function showSuggestions(query) {
@@ -427,9 +447,21 @@
       if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeModal();
     });
     window.addEventListener('hashchange',()=>{try{closeModal();render({navigation:true});}catch(error){fail(error);}});
-    window.addEventListener('pagehide',()=>{uploadGeneration++;reportGeneration++;ui.reportBusy=false;clearTimeout(toastTimer);});
+    window.addEventListener('pagehide',()=>{uploadGeneration++;reportGeneration++;ui.reportBusy=false;ui.exportBusy=false;clearTimeout(toastTimer);});
     render();
-    if(preview)preview.startSync();
+    if(preview)preview.startSync({
+      canRefresh:()=>{
+        if(route()[0]==='add'||ui.uploadBusy||ui.reportBusy||ui.exportBusy||$('#modal')?.open||document.activeElement?.matches?.('input, textarea, select, [contenteditable="true"]'))return false;
+        const profile=$('#pf-profile-form');
+        if(profile){
+          const name=profile.querySelector('[name="nickname"]'),currency=profile.querySelector('[name="currency"]');
+          if(name?.value!==undefined&&name.value!==state.member.profile.nickname)return false;
+          if(currency?.value!==undefined&&currency.value!==state.currency)return false;
+        }
+        return true;
+      },
+      onRefresh:()=>render()
+    });
   }
   root.WatchifyPortfolio=Object.freeze({mount});
 })(globalThis);

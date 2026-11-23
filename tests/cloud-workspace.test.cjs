@@ -17,7 +17,7 @@ function mockClient({ rows = new Map(), userId = USER_A } = {}) {
   const result = async query => {
     const actingId = controller.user?.id;
     const actingAnonymous = controller.user?.is_anonymous;
-    calls.push({ table: query.table, kind: query.kind, filters: { ...query.filters }, actingId, payload: query.payload && copy(query.payload) });
+    calls.push({ table: query.table, kind: query.kind, selection: query.selection, filters: { ...query.filters }, actingId, payload: query.payload && copy(query.payload) });
     if (query.table === 'tester_workspaces' && controller.hold) { const hold = controller.hold; controller.hold = null; await hold; }
     if (query.table === 'tester_workspaces' && query.kind === 'select' && controller.holdRead) { const hold = controller.holdRead; controller.holdRead = null; await hold; }
     if (query.table === 'tester_workspaces' && controller.failBefore) { controller.failBefore = false; return { data: null, error: { status: 503, message: 'Unavailable' } }; }
@@ -35,7 +35,8 @@ function mockClient({ rows = new Map(), userId = USER_A } = {}) {
       rows.set(id, row);
     }
     if (controller.failAfter && query.kind !== 'select') { controller.failAfter = false; return { data: null, error: { status: 503, message: 'Reply lost after commit' } }; }
-    return { data: row ? copy(row) : null, error: null };
+    const selected = row && query.selection ? Object.fromEntries(query.selection.split(',').map(key => [key, row[key]])) : row;
+    return { data: selected ? copy(selected) : null, error: null };
   };
   const client = {
     supabaseUrl: 'https://test.supabase.co',
@@ -47,7 +48,7 @@ function mockClient({ rows = new Map(), userId = USER_A } = {}) {
       assert.equal(table, 'tester_workspaces');
       const query = { table, kind: 'select', filters: {}, payload: null };
       const builder = {
-        select() { return builder; },
+        select(selection) { query.selection = selection; return builder; },
         eq(key, value) { query.filters[key] = value; return builder; },
         insert(payload) { query.kind = 'insert'; query.payload = payload; return builder; },
         update(payload) { query.kind = 'update'; query.payload = payload; return builder; },
@@ -270,4 +271,126 @@ test('an account change during the initial snapshot read discards the stale resp
   assert.equal(cloud.exportPending(), null);
   assert.equal(await cloud.load(), null);
   assert.equal(cloud.getStatus().userId, USER_B);
+});
+
+test('clean devices adopt each other’s snapshots and save against the adopted version', async () => {
+  const rows = new Map();
+  const web = mockClient({ rows }), phone = mockClient({ rows });
+  const left = workspace(web.client), right = workspace(phone.client);
+  await left.load(); await left.save(data('shared baseline')); await right.load();
+  await left.save(data('watch added on website'));
+  let phoneState;
+  const pulled = await right.refresh({ applySnapshot: snapshot => { phoneState = snapshot; return true; } });
+  assert.equal(pulled.changed, true);
+  assert.equal(phoneState.note, 'watch added on website');
+  assert.equal(right.getStatus().version, 2);
+  await right.save(data('purchase edited on phone'));
+  assert.equal(phone.controller.calls.find(call => call.kind === 'update').filters.version, 2);
+  let webState;
+  await left.refresh({ applySnapshot: snapshot => { webState = snapshot; return true; } });
+  assert.equal(webState.note, 'purchase edited on phone');
+  assert.equal(left.getStatus().version, 3);
+});
+
+test('unchanged polling fetches metadata only and does not rerender or write', async () => {
+  const { client, controller } = mockClient();
+  const cloud = workspace(client); await cloud.load(); await cloud.save(data('baseline'));
+  const before = controller.calls.length;
+  const result = await cloud.refresh({ applySnapshot() { assert.fail('unchanged data must not be applied'); } });
+  assert.equal(result.changed, false);
+  assert.deepEqual(controller.calls.slice(before).map(call => [call.kind, call.selection]), [['select', 'version,updated_at,save_id']]);
+  assert.equal(controller.rows.get(USER_A).version, 1);
+});
+
+test('a local draft appearing during a remote poll rejects adoption without advancing the save version', async () => {
+  const rows = new Map(); const web = mockClient({ rows }), phone = mockClient({ rows });
+  const left = workspace(web.client), right = workspace(phone.client);
+  await left.load(); await left.save(data('baseline')); await right.load(); await left.save(data('remote newer'));
+  let release; phone.controller.holdRead = new Promise(resolve => { release = resolve; });
+  let canApply = true, applied = false;
+  const poll = right.refresh({ applySnapshot() { if (!canApply) return false; applied = true; return true; } });
+  await new Promise(resolve => setImmediate(resolve)); canApply = false; release();
+  assert.equal((await poll).deferred, true);
+  assert.equal(applied, false);
+  assert.equal(right.getStatus().version, 1);
+  await assert.rejects(right.save(data('local draft must survive')), { code: 'CONFLICT' });
+  assert.equal(right.exportPending().note, 'local draft must survive');
+  assert.equal(rows.get(USER_A).snapshot.note, 'remote newer');
+});
+
+test('pending and conflicted writes postpone remote reads and retain recovery data', async () => {
+  const { client, controller } = mockClient();
+  const cloud = workspace(client); await cloud.load(); await cloud.save(data('baseline'));
+  controller.failBefore = true; await assert.rejects(cloud.save(data('offline local change')), { code: 'NETWORK' });
+  const before = controller.calls.length;
+  const result = await cloud.refresh({ applySnapshot() { assert.fail('pending edits must never be replaced'); } });
+  assert.equal(result.deferred, true);
+  assert.equal(controller.calls.length, before);
+  assert.equal(cloud.exportPending().note, 'offline local change');
+});
+
+test('a completed local save invalidates a previously started remote read', async () => {
+  const { client, controller } = mockClient();
+  const cloud = workspace(client); await cloud.load(); await cloud.save(data('baseline'));
+  let release; controller.holdRead = new Promise(resolve => { release = resolve; });
+  const poll = cloud.refresh({ applySnapshot() { assert.fail('stale reads must not replace a completed write'); } });
+  await new Promise(resolve => setImmediate(resolve));
+  await cloud.save(data('edit during metadata request'));
+  release(); assert.equal((await poll).deferred, true);
+  assert.equal(cloud.getStatus().version, 2);
+  assert.equal(controller.rows.get(USER_A).snapshot.note, 'edit during metadata request');
+});
+
+test('account changes and disposal discard late remote data before the application callback', async t => {
+  for (const action of ['account', 'dispose']) await t.test(action, async () => {
+    const rows = new Map(); const web = mockClient({ rows }), phone = mockClient({ rows });
+    const left = workspace(web.client), right = workspace(phone.client);
+    await left.load(); await left.save(data('private A')); await right.load(); await left.save(data('new private A'));
+    let release; phone.controller.holdRead = new Promise(resolve => { release = resolve; });
+    const poll = right.refresh({ applySnapshot() { assert.fail('another account must not receive this snapshot'); } });
+    await new Promise(resolve => setImmediate(resolve));
+    if (action === 'account') phone.controller.signIn(USER_B); else right.dispose();
+    release(); await assert.rejects(poll, { code: 'AUTH_CHANGED' });
+  });
+});
+
+test('invalid newer snapshots preserve the current version and report a sync error', async () => {
+  const { client, controller } = mockClient();
+  const cloud = workspace(client, { validateSnapshot: snapshot => {
+    if (snapshot.note === 'invalid') throw Object.assign(new Error('Invalid snapshot'), { code: 'SNAPSHOT_INVALID' });
+    return copy(snapshot);
+  } });
+  await cloud.load(); await cloud.save(data('baseline'));
+  controller.rows.set(USER_A, { snapshot: data('invalid'), version: 2, save_id: 'fixture-newer-save', updated_at: '2026-11-23T00:00:00Z' });
+  await assert.rejects(cloud.refresh({ applySnapshot() { assert.fail('invalid data must never be applied'); } }), { code: 'SNAPSHOT_INVALID' });
+  assert.equal(cloud.getStatus().version, 1);
+  assert.equal(cloud.getStatus().state, 'saved');
+  assert.equal(cloud.getStatus().syncError.code, 'SNAPSHOT_INVALID');
+});
+
+test('a mounted app rejecting an incompatible snapshot keeps its CAS version and cannot overwrite the remote copy', async () => {
+  const { client, controller } = mockClient();
+  const cloud = workspace(client); await cloud.load(); await cloud.save(data('mounted collection'));
+  controller.rows.set(USER_A, { snapshot: data('older format saved elsewhere'), version: 2, save_id: 'fixture-legacy-save', updated_at: '2026-11-23T00:00:00Z' });
+  await assert.rejects(cloud.refresh({ applySnapshot() {
+    throw Object.assign(new Error('The mounted app cannot safely adopt this format'), { code: 'SNAPSHOT_VERSION' });
+  } }), { code: 'SNAPSHOT_VERSION' });
+  assert.equal(cloud.getStatus().version, 1);
+  assert.equal(cloud.getStatus().state, 'saved');
+  assert.equal(cloud.getStatus().syncError.code, 'SNAPSHOT_VERSION');
+  await assert.rejects(cloud.save(data('local collection edit retained')), { code: 'CONFLICT' });
+  assert.equal(cloud.exportPending().note, 'local collection edit retained');
+  assert.equal(controller.rows.get(USER_A).snapshot.note, 'older format saved elsewhere');
+});
+
+test('a failed metadata poll does not claim that an acknowledged save was lost', async () => {
+  const { client, controller } = mockClient();
+  const cloud = workspace(client); await cloud.load(); await cloud.save(data('acknowledged'));
+  controller.failBefore = true;
+  await assert.rejects(cloud.refresh({ applySnapshot: () => true }), { code: 'NETWORK' });
+  assert.equal(cloud.getStatus().state, 'saved');
+  assert.equal(cloud.getStatus().pending, false);
+  assert.equal(cloud.getStatus().syncError.code, 'NETWORK');
+  await cloud.refresh({ applySnapshot: () => true });
+  assert.equal(cloud.getStatus().syncError, null);
 });

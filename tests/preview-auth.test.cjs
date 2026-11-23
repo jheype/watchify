@@ -16,7 +16,7 @@ function setup(options = {}) {
   const nodes = new Map(), timers = new Map(), intervals = new Map(), downloads = [], urls = new Map();
   const listeners = new Map(), windowListeners = new Map(), authListeners = new Set();
   let nextTimer = 0, currentUser = options.initialUser === undefined ? USER_A : options.initialUser, signupSession = null, reloads = 0, confirmations = 0, captureCalls = 0;
-  const authCalls = [], clientOptions = [], historyChanges = [];
+  const authCalls = [], clientOptions = [], historyChanges = [], nativeEvents = [];
   const unescape = text => text.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   class Element {
     constructor(tag = 'div') { this.tagName = tag; this.listeners = new Map(); this.dataset = {}; this.hidden = false; this.inert = false; this.disabled = false; this.textContent = ''; this.value = ''; this.children = []; this.fields = []; }
@@ -90,7 +90,8 @@ function setup(options = {}) {
   function switchUser(next) { currentUser = next; for (const fn of authListeners) fn(next ? 'SIGNED_IN' : 'SIGNED_OUT', next ? { user: next } : null); }
   const cloud = {
     pending: copy(options.pending || null), remote: copy(options.remote || null), status: { state: 'idle', userId: USER_A.id, pending: false },
-    loads: [], saves: [], retries: [], operations: [], disposed: false,
+    loads: [], saves: [], retries: [], refreshes: [], operations: [], disposed: false,
+    version: options.remote ? 1 : 0, remoteVersion: options.remote ? 1 : 0,
     emit(state, error = null) { this.status = { state, userId: USER_A.id, pending: !!this.pending, error }; this.onStatus(copy(this.status)); },
     async load(args = {}) {
       this.loads.push(copy(args));
@@ -105,12 +106,22 @@ function setup(options = {}) {
       this.pending = copy(snapshot); this.emit('saving');
       if (options.conflict) { this.emit('conflict'); throw Object.assign(new Error('Newer remote copy'), { code: 'CONFLICT' }); }
       if (options.save) return options.save(this, snapshot);
-      this.remote = copy(snapshot); this.pending = null; this.emit('saved');
+      this.remote = copy(snapshot); this.version = ++this.remoteVersion; this.pending = null; this.emit('saved');
     },
     async retry() {
       this.retries.push(copy(this.pending)); this.operations.push('retry:' + this.pending?.note);
       if (options.retry) return options.retry(this);
       this.remote = copy(this.pending); this.pending = null; this.emit('saved');
+    },
+    updateRemote(snapshot) { this.remote = copy(snapshot); this.remoteVersion++; },
+    applyIncoming(args) {
+      if (this.remoteVersion === this.version || !this.remote) return { changed: false };
+      if (args.applySnapshot(copy(this.remote)) !== true) return { changed: false, deferred: true };
+      this.version = this.remoteVersion; this.emit('saved'); return { changed: true };
+    },
+    async refresh(args) {
+      this.refreshes.push(args);
+      return options.refresh ? options.refresh(this, args) : this.applyIncoming(args);
     },
     exportPending() { return copy(this.pending); },
     getStatus() { return copy(this.status); },
@@ -128,29 +139,34 @@ function setup(options = {}) {
     WatchifyWorkspaceSnapshot: {
       async capture(state) { captureCalls++; return options.capture ? options.capture(state) : { note: state.note }; },
       async captureBackup(state) { return options.backup ? options.backup(state) : { note: state.note }; },
-      restore(state, snapshot) { Object.assign(state, copy(snapshot)); }
+      restore(state, snapshot) { return options.restore ? options.restore(state, snapshot) : Object.assign(state, copy(snapshot)); }
     },
-    document, Blob, URL: BrowserURL, URLSearchParams, AbortController, location,
+    document, Blob, TextEncoder, URL: BrowserURL, URLSearchParams, AbortController, location,
+    WatchifyNative: options.native,
+    CustomEvent: class { constructor(type) { this.type = type; } },
     history: { replaceState(_state, _unused, url) { historyChanges.push(url); location.href = new BrowserURL(url, location.href).href; } },
     confirm() { confirmations++; return options.confirm !== false; },
     setTimeout(fn, ms) { const id = ++nextTimer; timers.set(id, { fn, ms }); return id; },
     clearTimeout(id) { timers.delete(id); },
     setInterval(fn, ms) { const id = ++nextTimer; intervals.set(id, { fn, ms }); return id; },
     clearInterval(id) { intervals.delete(id); },
-    addEventListener(type, fn) { if (!windowListeners.has(type)) windowListeners.set(type, []); windowListeners.get(type).push(fn); }
+    addEventListener(type, fn) { if (!windowListeners.has(type)) windowListeners.set(type, []); windowListeners.get(type).push(fn); },
+    dispatchEvent(event) { nativeEvents.push(event.type); for (const fn of windowListeners.get(event.type) || []) fn(event); return true; }
   };
   context.window = context;
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/preview-auth.js'), 'utf8'), context);
   return {
-    api: context.WatchifyPreview, nodes, cloud, downloads, switchUser, authCalls, clientOptions, location, historyChanges,
+    api: context.WatchifyPreview, nodes, cloud, downloads, switchUser, authCalls, clientOptions, location, historyChanges, nativeEvents, document,
     get reloads() { return reloads; }, get confirmations() { return confirmations; }, get captureCalls() { return captureCalls; },
     async runTimer(ms) { const entry = [...timers.entries()].find(([, timer]) => timer.ms === ms); assert.ok(entry, `Expected a ${ms}ms timer`); timers.delete(entry[0]); return entry[1].fn(); },
     async emit(type) { for (const fn of listeners.get(type) || []) await fn({ target: new Element() }); },
+    async emitWindow(type) { for (const fn of windowListeners.get(type) || []) await fn({ type }); },
+    async runInterval(ms) { const entry = [...intervals.values()].find(timer => timer.ms === ms); assert.ok(entry, `Expected a ${ms}ms interval`); await entry.fn(); },
     beforeUnload() { const event = { prevented: false, preventDefault() { this.prevented = true; } }; for (const fn of windowListeners.get('beforeunload') || []) fn(event); return event; }
   };
 }
 
-async function open(h, state = { note: 'default seed' }) { assert.equal(await h.api.authenticate(), true); await h.api.restoreWorkspace(state); h.api.startSync(); return state; }
+async function open(h, state = { note: 'default seed' }, hooks) { assert.equal(await h.api.authenticate(), true); await h.api.restoreWorkspace(state); h.api.startSync(hooks); return state; }
 
 async function submitAuth(h, { email = USER_A.email, password = 'fixture password only', confirm = password } = {}) {
   h.nodes.get('preview-auth-email').value = email;
@@ -487,4 +503,236 @@ test('a failed backup never silently substitutes an older snapshot or discards c
   assert.equal(state.note, 'new unsaved changes');
   assert.match(h.nodes.get('preview-save-error').textContent, /No older copy has been substituted/);
   assert.equal(h.nodes.get('main').inert, false);
+});
+
+test('a clean foreground workspace adopts another device’s data without reloading or writing it back', async () => {
+  let renders = 0;
+  const h = setup({ remote: { note: 'baseline' } });
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh: () => { renders++; } });
+  h.cloud.updateRemote({ note: 'added on iPhone' });
+  assert.equal(await h.api.syncNow(), true);
+  assert.equal(state.note, 'added on iPhone');
+  assert.equal(renders, 1);
+  assert.equal(h.reloads, 0);
+  assert.equal(h.cloud.saves.length, 0);
+  assert.equal(h.beforeUnload().prevented, false);
+  await h.api.syncNow();
+  assert.equal(renders, 1, 'unchanged data does not replace the active screen');
+});
+
+function portfolioFixture() {
+  require('../src/data.js');
+  const snapshot = require('../src/workspace-snapshot.js');
+  const { create: createStore } = require('../src/workspace-store.js');
+  const { create: createPortfolio } = require('../src/portfolio-model.js');
+  const state = {
+    watches: structuredClone(globalThis.WatchifyData.watches), saved: [], currency: 'GBP', activity: [], activitySequence: 0,
+    sell: { step: 1, photos: [], watchId: 'santos' }, sellDraft: false, listingSequence: 0, syncCount: 0,
+    member: { profile: { nickname: 'Collection tester', showroom: 'Private' }, draft: {}, offers: [], sales: [], notices: [], sequence: 1 }
+  };
+  createStore({ state, now: () => Date.parse('2026-11-22T12:00:00Z') });
+  const model = createPortfolio({ state });
+  model.add({ catalogueId: 'submariner', year: 2021, condition: 'Good', set: 'papers' });
+  return { state, snapshot, createPortfolio };
+}
+
+test('the actual portfolio model reads a live snapshot adopted by the actual codec without a writeback', async () => {
+  const fixture = portfolioFixture(), baseline = await fixture.snapshot.capture(fixture.state);
+  const h = setup({ remote: baseline, capture: fixture.snapshot.capture, restore: fixture.snapshot.restore });
+  let model, rendered;
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh: () => { rendered = model.collection(); } });
+  model = fixture.createPortfolio({ state });
+  fixture.createPortfolio({ state: fixture.state }).add({ catalogueId: 'santos' });
+  const incoming = await fixture.snapshot.capture(fixture.state);
+  h.cloud.updateRemote(incoming);
+  await h.api.syncNow();
+  assert.deepEqual(rendered, fixture.state.portfolio.collection);
+  assert.deepEqual(model.collection(), fixture.state.portfolio.collection);
+  assert.deepEqual(await fixture.snapshot.capture(state), incoming);
+  await h.api.syncNow();
+  assert.equal(h.cloud.saves.length, 0, 'restoring the actual codec keeps the acknowledged baseline stable');
+  assert.equal(h.cloud.version, 2);
+});
+
+test('live adoption refuses a valid legacy snapshot rather than deleting the mounted collection', async () => {
+  const fixture = portfolioFixture(), baseline = await fixture.snapshot.capture(fixture.state);
+  const h = setup({ remote: baseline, capture: fixture.snapshot.capture, restore: fixture.snapshot.restore });
+  let renders = 0;
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh: () => { renders++; } });
+  const model = fixture.createPortfolio({ state }), original = model.collection();
+  const legacy = copy(baseline); delete legacy.state.portfolio;
+  fixture.snapshot.validate(legacy);
+  h.cloud.updateRemote(legacy);
+  await h.api.syncNow();
+  assert.equal(h.cloud.refreshes.length, 1);
+  assert.deepEqual(model.collection(), original, 'a missing portfolio cannot erase the current collection or break model reads');
+  assert.equal(renders, 0);
+  assert.equal(h.cloud.version, 1, 'the rejected version is not adopted as a future save baseline');
+  assert.equal(h.cloud.saves.length, 0);
+  assert.deepEqual(h.cloud.remote, legacy, 'the newer remote workspace remains untouched');
+});
+
+test('active forms and modal work postpone remote adoption until the controller says it is safe', async () => {
+  let safe = false, renders = 0;
+  const h = setup({ remote: { note: 'baseline' } });
+  const state = await open(h, {}, { canRefresh: () => safe, onRefresh: () => { renders++; } });
+  h.cloud.updateRemote({ note: 'newer cloud' });
+  await h.api.syncNow();
+  assert.equal(h.cloud.refreshes.length, 0);
+  assert.equal(state.note, 'baseline');
+  safe = true; await h.api.syncNow();
+  assert.equal(state.note, 'newer cloud'); assert.equal(renders, 1);
+});
+
+test('a local edit during a delayed cloud read keeps the local data and unload protection', async () => {
+  const read = deferred();
+  const h = setup({ remote: { note: 'baseline' }, refresh: async (cloud, args) => { await read.promise; return cloud.applyIncoming(args); } });
+  let renders = 0;
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh: () => { renders++; } });
+  h.cloud.updateRemote({ note: 'remote edit' });
+  const syncing = h.api.syncNow(); await settle();
+  assert.equal(h.cloud.refreshes.length, 1);
+  state.note = 'local unsaved edit'; await h.emit('input');
+  read.resolve(); await syncing;
+  assert.equal(state.note, 'local unsaved edit');
+  assert.equal(renders, 0);
+  assert.equal(h.beforeUnload().prevented, true);
+  assert.equal(h.cloud.version, 1);
+});
+
+test('a state mutation without a DOM event during a cloud read is also preserved', async () => {
+  const read = deferred();
+  const h = setup({ remote: { note: 'baseline' }, refresh: async (cloud, args) => { await read.promise; return cloud.applyIncoming(args); } });
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh() { assert.fail('a newer in-memory mutation must not be replaced'); } });
+  h.cloud.updateRemote({ note: 'remote edit' });
+  const syncing = h.api.syncNow(); await settle();
+  state.note = 'asynchronous local result';
+  read.resolve(); await syncing;
+  assert.equal(state.note, 'asynchronous local result');
+  assert.equal(h.cloud.version, 1);
+  assert.equal(h.beforeUnload().prevented, true);
+});
+
+test('an account change during remote refresh cancels adoption and signals the native session boundary', async () => {
+  const read = deferred();
+  const h = setup({ remote: { note: 'A baseline' }, refresh: async (cloud, args) => { await read.promise; return cloud.applyIncoming(args); } });
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh() { assert.fail('the old account cannot rerender'); } });
+  h.cloud.updateRemote({ note: 'A private update' });
+  const syncing = h.api.syncNow(); await settle();
+  h.switchUser(USER_B); read.resolve(); await syncing;
+  assert.equal(state.note, 'A baseline');
+  assert.equal(h.cloud.saves.length, 0);
+  assert.deepEqual(h.nativeEvents, ['watchify:session-changed']);
+  assert.throws(() => h.api.assertActive(), { code: 'AUTH_CHANGED' });
+});
+
+test('native activation, browser foreground and the 15s visible timer use the same sync path', async () => {
+  const h = setup({ remote: { note: 'baseline' } });
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh() {} });
+  await h.runTimer(650);
+  h.cloud.updateRemote({ note: 'native foreground' });
+  await h.emitWindow('watchify:native-active'); await h.api.syncNow();
+  assert.equal(state.note, 'native foreground');
+  h.document.hidden = true; h.document.visibilityState = 'hidden';
+  h.cloud.updateRemote({ note: 'while backgrounded' });
+  const before = h.cloud.refreshes.length;
+  await h.runInterval(15000); await h.api.syncNow();
+  assert.equal(h.cloud.refreshes.length, before);
+  h.document.hidden = false; h.document.visibilityState = 'visible';
+  await h.emit('visibilitychange'); await h.api.syncNow();
+  assert.equal(state.note, 'while backgrounded');
+  h.cloud.updateRemote({ note: 'periodic update' });
+  await h.runInterval(15000); await h.api.syncNow();
+  assert.equal(state.note, 'periodic update');
+});
+
+test('sign-out signals native cancellation before waiting for cloud saving', async () => {
+  const saving = deferred();
+  const h = setup({ remote: { note: 'baseline' }, save: async (cloud, snapshot) => { await saving.promise; cloud.remote = copy(snapshot); cloud.pending = null; cloud.emit('saved'); } });
+  const state = await open(h); state.note = 'unsaved';
+  const signingOut = h.nodes.get('preview-signout').emit('click'); await settle();
+  assert.equal(h.nativeEvents[0], 'watchify:session-changed');
+  saving.resolve(); await signingOut;
+});
+
+test('native backup export shares the current JSON before the explicit cloud-reopen confirmation', async () => {
+  const shared = [];
+  const h = setup({ remote: { note: 'remote' }, pending: { note: 'pending' }, conflict: true,
+    native: { available: () => true, download: async request => { shared.push(request); return { shared: true }; } } });
+  const state = await open(h); state.note = 'latest private data';
+  await h.nodes.get('preview-reload-saved').emit('click');
+  assert.equal(shared.length, 1); assert.equal(h.downloads.length, 0);
+  assert.equal(shared[0].filename, 'watchify-test-workspace.json');
+  assert.equal(shared[0].mimeType, 'application/json');
+  assert.equal(JSON.parse(new TextDecoder().decode(shared[0].data)).snapshot.note, 'latest private data');
+  assert.equal(h.confirmations, 1); assert.equal(h.reloads, 1);
+});
+
+test('cancelled, oversized or unconfirmed native recovery exports never discard a pending workspace', async t => {
+  for (const code of ['DOWNLOAD_CANCELLED', 'DOWNLOAD_TOO_LARGE', 'UNCONFIRMED']) await t.test(code, async () => {
+    const h = setup({ remote: { note: 'remote' }, pending: { note: 'pending' }, conflict: true,
+      native: { available: () => true, download: async () => { if (code === 'UNCONFIRMED') return { shared: false }; throw Object.assign(new Error('Fixture native failure'), { code }); } } });
+    const state = await open(h); state.note = 'unsaved current copy';
+    await h.nodes.get('preview-reload-saved').emit('click');
+    assert.equal(h.confirmations, 0); assert.equal(h.reloads, 0);
+    assert.equal(h.cloud.loads.length, 1); assert.equal(state.note, 'unsaved current copy');
+    assert.equal(h.cloud.pending.note, 'pending');
+  });
+});
+
+test('an account boundary during native backup completion prevents cloud-reopen confirmation', async () => {
+  const share = deferred();
+  const h = setup({ remote: { note: 'remote' }, pending: { note: 'pending' }, conflict: true,
+    native: { available: () => true, download: async () => { await share.promise; return { shared: true }; } } });
+  await open(h);
+  const reopening = h.nodes.get('preview-reload-saved').emit('click'); await settle();
+  h.switchUser(USER_B); share.resolve(); await reopening;
+  assert.equal(h.confirmations, 0); assert.equal(h.reloads, 0);
+  assert.equal(h.cloud.loads.length, 1);
+});
+
+test('native password recovery starts in the system browser without submitting credentials or email', async () => {
+  let requests = 0;
+  const h = setup({ initialUser: null, native: { available: () => true, openAccountRecovery: async (...args) => { assert.equal(args.length, 0); requests++; } } });
+  void h.api.authenticate(); await waitForNode(h, 'preview-forgot-password');
+  h.nodes.get('preview-auth-email').value = 'typed-but-not-transferred@example.test';
+  await h.nodes.get('preview-forgot-password').emit('click');
+  assert.equal(requests, 1); assert.equal(h.authCalls.length, 0);
+  assert.equal(h.nodes.has('preview-auth-password'), true);
+  assert.match(h.nodes.get('preview-auth-message').textContent, /same browser/);
+});
+
+test('native recovery launch failure stays on sign-in with an actionable error', async () => {
+  const h = setup({ initialUser: null, native: { available: () => true, openAccountRecovery: async () => { throw new Error('Cannot open browser'); } } });
+  void h.api.authenticate(); await waitForNode(h, 'preview-forgot-password');
+  await h.nodes.get('preview-forgot-password').emit('click');
+  assert.equal(h.nodes.has('preview-auth-password'), true);
+  assert.equal(h.authCalls.length, 0);
+  assert.match(h.nodes.get('preview-login-error').textContent, /could not be opened/);
+});
+
+test('only the exact browser recovery entry parameter opens the request form, never a password change', async t => {
+  for (const value of ['reset', 'RESET', 'password', '']) await t.test(value || 'empty', async () => {
+    const h = setup({ initialUser: null, url: 'https://watchify.example/?watchify_access=' + value });
+    void h.api.authenticate(); await waitForNode(h, 'preview-login');
+    assert.equal(h.nodes.has('preview-auth-password'), value !== 'reset');
+    assert.equal(h.nodes.has('preview-new-password'), false);
+    assert.equal(h.authCalls.length, 0);
+    assert.equal(new URL(h.location.href).searchParams.has('watchify_access'), false);
+  });
+});
+
+test('a slow remote poll never delays saving a new local edit', async () => {
+  const read = deferred();
+  const h = setup({ remote: { note: 'baseline' }, refresh: async (cloud, args) => { await read.promise; return cloud.applyIncoming(args); } });
+  const state = await open(h, {}, { canRefresh: () => true, onRefresh() { assert.fail('the poll must not replace local work'); } });
+  const syncing = h.api.syncNow(); await settle();
+  assert.equal(h.cloud.refreshes.length, 1);
+  state.note = 'must save before the remote read finishes'; await h.emit('input');
+  await h.runTimer(650);
+  assert.equal(h.cloud.saves.length, 1);
+  assert.equal(h.cloud.remote.note, 'must save before the remote read finishes');
+  read.resolve(); await syncing;
+  assert.equal(state.note, 'must save before the remote read finishes');
+  assert.equal(h.beforeUnload().prevented, false);
 });

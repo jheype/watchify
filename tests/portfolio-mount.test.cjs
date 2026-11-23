@@ -36,7 +36,7 @@ async function firstAccount(initialHash = '#portfolio') {
     URL: class TestURL extends URL {
       static createObjectURL(blob) { calls.blobs.push(blob); return 'blob:report-' + calls.blobs.length; }
       static revokeObjectURL(url) { calls.revoked.push(url); }
-    }, Blob,
+    }, Blob, TextEncoder,
     setTimeout(callback, delay, ...args) {
       if (delay < 1000) return setTimeout(callback, delay, ...args);
       const id = Symbol('ui timer'); delayed.set(id, () => callback(...args)); return id;
@@ -49,7 +49,7 @@ async function firstAccount(initialHash = '#portfolio') {
       async authenticate() { calls.authenticated++; return true; },
       async restoreWorkspace(value) { calls.restored++; state = value; },
       assertActive() { if (!activeAccount) throw Object.assign(new Error('The signed-in account changed.'), { code: 'AUTH_CHANGED' }); },
-      startSync() { calls.synced.push(JSON.parse(JSON.stringify(state.portfolio))); },
+      startSync(options) { calls.syncHooks=options; calls.synced.push(JSON.parse(JSON.stringify(state.portfolio))); },
       fatal() { calls.fatal++; }
     },
     document: {
@@ -87,6 +87,10 @@ async function firstAccount(initialHash = '#portfolio') {
     html: () => node('#main').innerHTML,
     modal: () => node('#modal').innerHTML,
     toast: () => node('#toast').textContent,
+    setField(selector, value) { node(selector).value=value; },
+    setFocusedInput(focused) { sandbox.document.activeElement=focused?{matches:()=>true}:null; },
+    setModalOpen(open) { node('#modal').open=open; },
+    useNativeSharing(download) { sandbox.WatchifyNative={available:()=>true,download}; },
     addWatch(input) { return vm.runInContext('WatchifyPortfolioModel.create({state:__testState}).add(' + JSON.stringify(input) + ')', sandbox); },
     async settle() { await new Promise(setImmediate); },
     async pagehide() { for (const callback of events.window.get('pagehide') || []) await callback(); },
@@ -300,4 +304,60 @@ test('a failed report cannot notify or rerender an account that ended while it w
     assert.equal(h.html(), before);
     assert.equal(h.toast(), toastBefore);
   }
+});
+
+test('live refresh preserves focused fields, add drafts, open dialogs and blurred profile drafts', async () => {
+  const h=await firstAccount();
+  assert.equal(h.calls.syncHooks.canRefresh(),true);
+  h.setFocusedInput(true);assert.equal(h.calls.syncHooks.canRefresh(),false);
+  h.setFocusedInput(false);h.setModalOpen(true);assert.equal(h.calls.syncHooks.canRefresh(),false);
+  h.setModalOpen(false);await h.navigate('#add');assert.equal(h.calls.syncHooks.canRefresh(),false);
+  await h.navigate('#settings');
+  h.setField('#pf-profile-form [name="nickname"]',h.state.member.profile.nickname);
+  h.setField('#pf-profile-form [name="currency"]',h.state.currency);
+  assert.equal(h.calls.syncHooks.canRefresh(),true);
+  h.setField('#pf-profile-form [name="nickname"]','An unsaved name');
+  assert.equal(h.calls.syncHooks.canRefresh(),false,'a blurred name edit must not be lost');
+  h.setField('#pf-profile-form [name="nickname"]',h.state.member.profile.nickname);
+  h.setField('#pf-profile-form [name="currency"]','EUR');
+  assert.equal(h.calls.syncHooks.canRefresh(),false,'a changed form selection remains a draft until submit');
+});
+
+test('an adopted collection rerenders Analytics on the current route using the new state object', async () => {
+  const h=await firstAccount('#analytics');
+  const entry=h.addWatch({catalogueId:'santos',purchasePriceGBP:5000});
+  const original=h.state.portfolio;
+  vm.runInContext('__testState.portfolio=JSON.parse(JSON.stringify(__testState.portfolio))',h.sandbox);
+  assert.notEqual(h.state.portfolio,original);
+  h.calls.syncHooks.onRefresh();
+  assert.equal(h.sandbox.location.hash,'#analytics');
+  assert.match(h.html(),/1 of 1 watch with a recorded purchase price/);
+  assert.ok(h.html().includes('#collection/'+entry.id));
+  assert.doesNotMatch(h.html(),/Your collection is the starting point/);
+});
+
+test('native PDF sharing awaits completion, blocks refresh and never starts a browser download', async () => {
+  const h=await firstAccount('#analytics');h.addWatch({catalogueId:'santos'});
+  const sent=[];let complete;
+  h.useNativeSharing(payload=>{sent.push(payload);return new Promise(resolve=>{complete=resolve;});});
+  await h.clickAction('valuation-report');await h.settle();
+  assert.equal(sent.length,1);assert.equal(sent[0].mimeType,'application/pdf');
+  assert.equal(Buffer.from(sent[0].data).subarray(0,5).toString(),'%PDF-');
+  assert.equal(h.calls.syncHooks.canRefresh(),false);
+  assert.equal(h.calls.downloads.length,0);assert.equal(h.toast(),'');
+  complete({shared:true});await h.settle();
+  assert.match(h.toast(),/PDF has been shared/);assert.equal(h.calls.syncHooks.canRefresh(),true);
+  assert.equal(h.calls.downloads.length,0);
+});
+
+test('native CSV cancellation preserves data and never claims export success', async () => {
+  const h=await firstAccount();h.addWatch({catalogueId:'santos'});
+  const before=JSON.stringify(h.state.portfolio);
+  const sent=[];
+  h.useNativeSharing(payload=>{sent.push(payload);return Promise.reject(Object.assign(new Error('cancelled'),{code:'DOWNLOAD_CANCELLED'}));});
+  await h.clickAction('export');await h.settle();
+  assert.equal(sent.length,1);assert.equal(sent[0].mimeType,'text/csv');
+  assert.match(new TextDecoder().decode(sent[0].data),/Cartier/);
+  assert.equal(JSON.stringify(h.state.portfolio),before);assert.equal(h.calls.downloads.length,0);
+  assert.equal(h.toast(),'');assert.equal(h.calls.syncHooks.canRefresh(),true);
 });

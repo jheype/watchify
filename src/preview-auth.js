@@ -9,12 +9,19 @@
   let dirty = false, changedWhileSaving = false, stopped = false, loaded = false, reopening = false, locked = false;
   let captureError = null, currentStatus = { state: 'idle' };
   let authObserved = false;
+  let refreshing = null, syncCycle = null, editGeneration = 0, sessionGeneration = 0;
+  let syncHooks = { canRefresh: () => false, onRefresh: () => {} };
   const busy = () => Boolean(state?.uploadBusy || state?.sell?.busy || state?.syncBusy);
   const differentAccount = () => Boolean(observedAccountId && observedAccountId !== user?.id);
   const sessionChanged = () => Object.assign(new Error('The signed-in account changed.'), { code: 'AUTH_CHANGED' });
 
+  function notifySessionBoundary() {
+    sessionGeneration++;
+    if (typeof root.CustomEvent === 'function') root.dispatchEvent?.(new root.CustomEvent('watchify:session-changed'));
+  }
   function stopForSessionChange() {
     if (stopped) return;
+    notifySessionBoundary();
     stopped = true; clearTimeout(timer); clearInterval(interval);
     setTimeout(lockWorkspace, 0);
   }
@@ -40,7 +47,7 @@
     element('footer').innerHTML = '';
   }
   function waiting(title, text) {
-    gate('<span class="preview-kicker">Watchify 7.0.0 · Preview</span><span class="preview-loading-mark" aria-hidden="true"></span><h1>' + esc(title) + '</h1><p role="status">' + esc(text) + '</p>');
+    gate('<span class="preview-kicker">Watchify 7.1.0 · Preview</span><span class="preview-loading-mark" aria-hidden="true"></span><h1>' + esc(title) + '</h1><p role="status">' + esc(text) + '</p>');
   }
   function safeMessage(error, fallback) {
     if (error?.code === 'invalid_credentials') return 'The email or password is incorrect.';
@@ -101,21 +108,34 @@
     if (adopted.data?.session?.user?.id !== session.user.id) throw sessionChanged();
     return adopted;
   }
-  function loginForm(notice = '') {
+  function loginForm(notice = '', initialMode = 'signin') {
     return new Promise(resolve => {
       let rendering = 0;
       function render(mode = 'signin', email = '', message = '') {
         const version = ++rendering;
         const signup = mode === 'signup', password = signup || mode === 'signin';
         const titles = { signin: 'Your collection awaits.', signup: 'Begin your collection.', reset: 'A fresh start.' };
-        const descriptions = { signin: 'Sign in for a closer look at your watches and their value.', signup: 'Create a private space for your watches, price history and market perspective.', reset: 'Enter your account email. We’ll request a link to reset your password.' };
+        const descriptions = { signin: 'Sign in for a closer look at your watches and their value.', signup: 'Create a private space for your watches, price history and market perspective.', reset: 'Enter your account email. Request the reset link here, then open the newest email link in this same browser.' };
         const actions = { signin: 'Sign in to Watchify', signup: 'Create account', reset: 'Request reset link' };
         const links = mode === 'signin' ? '<button id="preview-create-account" type="button">Create account</button><button id="preview-forgot-password" type="button">Forgot password?</button>' : '<button id="preview-back-signin" type="button">Back to sign in</button>';
-        gate('<span class="preview-kicker">Watchify 7.0.0 · Preview</span><h1>' + titles[mode] + '</h1><p>' + descriptions[mode] + '</p><p class="preview-message" id="preview-auth-message" role="status">' + esc(message) + '</p><form id="preview-login" class="preview-form"><label>Email address<input id="preview-auth-email" name="email" type="email" autocomplete="username" maxlength="254" value="' + esc(email) + '" required></label>' + (password ? '<label>Password<input id="preview-auth-password" name="password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" ' + (signup ? 'minlength="12" aria-describedby="preview-password-help" ' : '') + 'maxlength="256" required></label>' : '') + (signup ? '<p class="preview-password-help" id="preview-password-help">Use at least 12 characters.</p><label>Confirm password<input id="preview-auth-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>' : '') + '<p class="preview-error" id="preview-login-error" role="alert"></p><button id="preview-auth-submit" class="btn primary full" type="submit">' + actions[mode] + '</button></form><nav class="preview-auth-links" aria-label="Account access">' + links + '</nav><p class="preview-note">Your collection is private to your account.<br>Market prices and movements are illustrative in this preview.</p>');
+        gate('<span class="preview-kicker">Watchify 7.1.0 · Preview</span><h1>' + titles[mode] + '</h1><p>' + descriptions[mode] + '</p><p class="preview-message" id="preview-auth-message" role="status">' + esc(message) + '</p><form id="preview-login" class="preview-form"><label>Email address<input id="preview-auth-email" name="email" type="email" autocomplete="username" maxlength="254" value="' + esc(email) + '" required></label>' + (password ? '<label>Password<input id="preview-auth-password" name="password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" ' + (signup ? 'minlength="12" aria-describedby="preview-password-help" ' : '') + 'maxlength="256" required></label>' : '') + (signup ? '<p class="preview-password-help" id="preview-password-help">Use at least 12 characters.</p><label>Confirm password<input id="preview-auth-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>' : '') + '<p class="preview-error" id="preview-login-error" role="alert"></p><button id="preview-auth-submit" class="btn primary full" type="submit">' + actions[mode] + '</button></form><nav class="preview-auth-links" aria-label="Account access">' + links + '</nav><p class="preview-note">Your collection is private to your account.<br>Market prices and movements are illustrative in this preview.</p>');
         const form = element('preview-login'), button = element('preview-auth-submit'), errorText = element('preview-login-error');
         const navigate = next => { if (!button.disabled) render(next, element('preview-auth-email').value.trim()); };
         element('preview-create-account')?.addEventListener('click', () => navigate('signup'));
-        element('preview-forgot-password')?.addEventListener('click', () => navigate('reset'));
+        const forgot = element('preview-forgot-password'), messageText = element('preview-auth-message');
+        forgot?.addEventListener('click', async () => {
+          if (button.disabled || forgot.disabled) return;
+          if (!root.WatchifyNative?.available()) { navigate('reset'); return; }
+          // PKCE's verifier belongs to the browser which requested the email.
+          // Start the request in the iPhone's default browser, where Mail opens it.
+          forgot.disabled = true; errorText.textContent = '';
+          try {
+            await root.WatchifyNative.openAccountRecovery();
+            if (version === rendering) messageText.textContent = 'Password recovery opens in your browser. Request the link there and open the newest email in that same browser. Then return here to sign in.';
+          } catch (_) {
+            if (version === rendering) errorText.textContent = 'Password recovery could not be opened. Try again, or open Watchify in your browser and choose Forgot password?';
+          } finally { forgot.disabled = false; }
+        });
         element('preview-back-signin')?.addEventListener('click', () => navigate('signin'));
         form.addEventListener('submit', async event => {
           event.preventDefault(); event.stopPropagation();
@@ -148,7 +168,7 @@
           } finally { if (version === rendering) { button.disabled = false; button.textContent = actions[mode]; } }
         });
       }
-      render('signin', '', notice);
+      render(initialMode === 'reset' ? 'reset' : 'signin', '', notice);
     });
   }
   async function resetPasswordForm(session, account) {
@@ -159,7 +179,7 @@
     if (seeded.error) throw seeded.error;
     const verified = await recoveryClient.auth.getUser();
     if (verified.error || verified.data?.user?.id !== account.id || verified.data.user.is_anonymous) throw verified.error || sessionChanged();
-    gate('<span class="preview-kicker">Watchify 7.0.0 · Account access</span><h1>A new password.</h1><p id="preview-reset-help">Choose at least 12 characters for the account in your reset link.</p><form id="preview-reset-password" class="preview-form"><label>New password<input id="preview-new-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" aria-describedby="preview-reset-help" required></label><label>Confirm new password<input id="preview-confirm-password" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><p id="preview-reset-error" class="preview-error" role="alert"></p><button id="preview-reset-submit" class="btn primary full" type="submit">Save new password</button></form><nav class="preview-auth-links" aria-label="Account access"><button id="preview-reset-cancel" type="button">Back to sign in</button></nav>');
+    gate('<span class="preview-kicker">Watchify 7.1.0 · Account access</span><h1>A new password.</h1><p id="preview-reset-help">Choose at least 12 characters for the account in your reset link.</p><form id="preview-reset-password" class="preview-form"><label>New password<input id="preview-new-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" aria-describedby="preview-reset-help" required></label><label>Confirm new password<input id="preview-confirm-password" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><p id="preview-reset-error" class="preview-error" role="alert"></p><button id="preview-reset-submit" class="btn primary full" type="submit">Save new password</button></form><nav class="preview-auth-links" aria-label="Account access"><button id="preview-reset-cancel" type="button">Back to sign in</button></nav>');
     return new Promise(resolve => {
       const form = element('preview-reset-password'), button = element('preview-reset-submit'), cancel = element('preview-reset-cancel');
       cancel.addEventListener('click', () => { if (!button.disabled) { form.reset(); resolve('Sign in to continue. Your password has not been changed.'); } });
@@ -207,7 +227,7 @@
     } finally { cleanUrl(); }
   }
   async function retryGate(title, text) {
-    gate('<span class="preview-kicker">Watchify 7.0.0 · Preview</span><h1>' + esc(title) + '</h1><p>' + esc(text) + '</p><button id="preview-retry-load" class="btn primary full">Try again</button>');
+    gate('<span class="preview-kicker">Watchify 7.1.0 · Preview</span><h1>' + esc(title) + '</h1><p>' + esc(text) + '</p><button id="preview-retry-load" class="btn primary full">Try again</button>');
     await new Promise(resolve => element('preview-retry-load').addEventListener('click', resolve, { once: true }));
   }
   async function authenticate() {
@@ -219,14 +239,22 @@
     client = root.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, authOptions());
     client.auth.onAuthStateChange((_event, session) => {
       authObserved = true;
+      const previousAccountId = observedAccountId;
       observedAccountId = session?.user?.id || null;
       updateLockExport();
+      if (stopped && previousAccountId !== observedAccountId) notifySessionBoundary();
       if (stopped || !user) return;
       if (!session || session.user?.is_anonymous || session.user?.id !== user.id) stopForSessionChange();
     });
     const callback = await emailCallback();
+    const accessUrl = new URL(location.href), resetRequested = accessUrl.searchParams.get('watchify_access') === 'reset';
+    if (accessUrl.searchParams.has('watchify_access')) {
+      accessUrl.searchParams.delete('watchify_access');
+      history.replaceState(null, '', accessUrl.pathname + accessUrl.search + accessUrl.hash);
+    }
     if (callback?.account) user = callback.account;
     else if (callback?.notice) user = await loginForm(callback.notice);
+    else if (resetRequested && !root.WatchifyNative?.available()) user = await loginForm('', 'reset');
     while (!user) {
       const session = await client.auth.getSession();
       if (session.error) { await retryGate('Sign-in could not be checked.', 'Your saved work has not been changed. Check your connection and try again.'); continue; }
@@ -276,6 +304,7 @@
     if (working || s === 'saving') return 'Saving changes…';
     if (busy()) return 'Preparing changes…';
     if (dirty || currentStatus.pending || s === 'pending') return 'Changes waiting to save';
+    if (currentStatus.syncError) return 'Saved copy kept · sync unavailable';
     return lastSaved ? 'Saved to your workspace' : 'Preparing your workspace…';
   }
   function paintStatus() {
@@ -331,12 +360,65 @@
   }
   function schedule(event) {
     if (stopped || reopening || !loaded || event?.target?.closest?.('.preview-toolbar, .preview-recovery, .preview-lock')) return;
+    editGeneration++;
     dirty = true;
     if (working) changedWhileSaving = true;
     clearTimeout(timer); timer = setTimeout(flush, 650); paintStatus();
   }
+  async function refreshFromCloud() {
+    if (refreshing) return refreshing;
+    if (!cloud?.refresh || stopped || reopening || !loaded || working || dirty || busy() || currentStatus.pending || captureError || !syncHooks.canRefresh()) return false;
+    const generation = editGeneration, accountGeneration = sessionGeneration, baseline = lastSaved;
+    if (baseline === null) return false;
+    const canApply = () => !stopped && !reopening && loaded && !working && !dirty && !busy() && !currentStatus.pending && !captureError && generation === editGeneration && accountGeneration === sessionGeneration && baseline === lastSaved && syncHooks.canRefresh();
+    refreshing = (async () => {
+      try {
+        // Capture checks changes made without a DOM event as well. The event
+        // generation is checked again after every asynchronous read.
+        const localFingerprint = JSON.stringify(state);
+        const snapshot = await root.WatchifyWorkspaceSnapshot.capture(state);
+        if (!canApply()) return false;
+        if (JSON.stringify(state) !== localFingerprint || JSON.stringify(snapshot) !== baseline) { schedule(); return false; }
+        const result = await cloud.refresh({ applySnapshot: next => {
+          assertCurrentWorkspace();
+          if (!canApply()) return false;
+          if (JSON.stringify(state) !== localFingerprint) { schedule(); return false; }
+          // An older client can save a valid legacy workspace with no portfolio.
+          // Initial loading can migrate it, but a mounted collection must not be
+          // erased or accept that version as the baseline for its next save.
+          if (state.portfolio !== undefined && !Object.hasOwn(next.state || {}, 'portfolio')) {
+            throw Object.assign(new Error('The newer saved workspace uses an older collection format. Your open collection has been kept.'), { code: 'SNAPSHOT_VERSION' });
+          }
+          root.WatchifyWorkspaceSnapshot.restore(state, next);
+          lastSaved = JSON.stringify(next); dirty = false; captureError = null;
+          return true;
+        } });
+        assertCurrentWorkspace();
+        if (result.changed) syncHooks.onRefresh();
+        return Boolean(result.changed);
+      } catch (failure) {
+        if (['AUTH_REQUIRED', 'AUTH_CHANGED'].includes(failure?.code)) stopForSessionChange();
+        return false;
+      }
+    })();
+    try { return await refreshing; }
+    finally { refreshing = null; paintStatus(); }
+  }
+  async function syncNow() {
+    if (stopped || reopening || !loaded || document.hidden) return false;
+    if (syncCycle) return syncCycle;
+    syncCycle = (async () => {
+      const saved = await flush();
+      if (!saved || stopped || reopening || document.hidden) return false;
+      await refreshFromCloud();
+      return !stopped && !dirty;
+    })();
+    try { return await syncCycle; }
+    finally { syncCycle = null; }
+  }
   async function exportChanges() {
     if (differentAccount()) { updateLockExport(); return false; }
+    const generation = sessionGeneration;
     let snapshot;
     try {
       const capture = root.WatchifyWorkspaceSnapshot.captureBackup || root.WatchifyWorkspaceSnapshot.capture;
@@ -345,8 +427,23 @@
       captureError = { message: 'The latest changes could not be downloaded. Keep this tab open, reduce oversized photos if needed, and try again. No older copy has been substituted.' };
       paintStatus(); return false;
     }
-    if (!snapshot || differentAccount()) { updateLockExport(); return false; }
-    const blob = new Blob([JSON.stringify({ product: 'Watchify', kind: 'test-workspace-backup', exportedAt: new Date().toISOString(), snapshot }, null, 2)], { type: 'application/json' });
+    if (!snapshot || differentAccount() || generation !== sessionGeneration) { updateLockExport(); return false; }
+    const text = JSON.stringify({ product: 'Watchify', kind: 'test-workspace-backup', exportedAt: new Date().toISOString(), snapshot }, null, 2);
+    if (root.WatchifyNative?.available()) {
+      try {
+        const result = await root.WatchifyNative.download({ data: new TextEncoder().encode(text), filename: 'watchify-test-workspace.json', mimeType: 'application/json' });
+        if (result?.shared !== true) return false;
+        if (differentAccount() || generation !== sessionGeneration) { updateLockExport(); return false; }
+        return true;
+      } catch (failure) {
+        if (failure?.code !== 'DOWNLOAD_CANCELLED') {
+          captureError = { message: 'The backup could not be shared. Your current changes have been kept. Try again before reopening the saved workspace.' };
+          paintStatus();
+        }
+        return false;
+      }
+    }
+    const blob = new Blob([text], { type: 'application/json' });
     const url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = 'watchify-test-workspace.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 30000);
     return true;
@@ -377,7 +474,7 @@
     setWorkspaceInert(true);
     const modal = element('modal'); if (modal?.open) modal.close();
     const overlay = document.createElement('section'); overlay.className = 'preview-lock'; overlay.setAttribute('role', 'alertdialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-labelledby', 'preview-lock-title');
-    overlay.innerHTML = '<div class="preview-card"><span class="preview-kicker">Watchify 7.0.0 · Session changed</span><h1 id="preview-lock-title">Sign in again.</h1><p>Saving has paused because your account session changed. You can download your changes before reopening Watchify, provided a different account is not signed in.</p><p class="preview-error" id="preview-lock-error" role="alert"></p><div class="preview-form"><button class="btn primary" id="preview-lock-export">Download changes</button><button class="btn outline" id="preview-lock-reload">Return to sign-in</button></div></div>';
+    overlay.innerHTML = '<div class="preview-card"><span class="preview-kicker">Watchify 7.1.0 · Session changed</span><h1 id="preview-lock-title">Sign in again.</h1><p>Saving has paused because your account session changed. You can download your changes before reopening Watchify, provided a different account is not signed in.</p><p class="preview-error" id="preview-lock-error" role="alert"></p><div class="preview-form"><button class="btn primary" id="preview-lock-export">Download changes</button><button class="btn outline" id="preview-lock-reload">Return to sign-in</button></div></div>';
     document.body.appendChild(overlay);
     element('preview-lock-export').addEventListener('click', exportChanges);
     element('preview-lock-reload').addEventListener('click', () => location.reload());
@@ -385,6 +482,7 @@
     element(differentAccount() ? 'preview-lock-reload' : 'preview-lock-export').focus();
   }
   async function signOut() {
+    notifySessionBoundary();
     const button = element('preview-signout'); button.disabled = true;
     if (busy()) { captureError = { message: 'Please wait for the current upload or action to finish, then sign out again.' }; paintStatus(); button.disabled = false; return; }
     setWorkspaceInert(true);
@@ -395,10 +493,11 @@
       stopped = true; dirty = false; clearTimeout(timer); clearInterval(interval); location.reload();
     } finally { button.disabled = false; if (!stopped) setWorkspaceInert(false); }
   }
-  function startSync() {
+  function startSync({ canRefresh, onRefresh } = {}) {
     assertCurrentWorkspace();
+    if (typeof canRefresh === 'function' && typeof onRefresh === 'function') syncHooks = { canRefresh, onRefresh };
     const bar = document.createElement('aside'); bar.id = 'preview-toolbar'; bar.className = 'preview-toolbar'; bar.setAttribute('aria-label', 'Collection workspace');
-    bar.innerHTML = '<div class="preview-toolbar-copy"><strong>WATCHIFY PREVIEW</strong><span class="preview-version">7.0.0</span><span>Illustrative market data</span></div><div class="preview-toolbar-actions"><span id="preview-save-status" class="preview-status" role="status"></span><button id="preview-signout" type="button">Sign out</button></div>';
+    bar.innerHTML = '<div class="preview-toolbar-copy"><strong>WATCHIFY PREVIEW</strong><span class="preview-version">7.1.0</span><span>Illustrative market data</span></div><div class="preview-toolbar-actions"><span id="preview-save-status" class="preview-status" role="status"></span><button id="preview-signout" type="button">Sign out</button></div>';
     document.body.insertBefore(bar, element('header'));
     const recovery = document.createElement('aside'); recovery.id = 'preview-save-recovery'; recovery.className = 'preview-recovery'; recovery.hidden = true;
     recovery.innerHTML = '<p id="preview-save-error" role="alert"></p><button id="preview-retry-save">Retry saving</button><button id="preview-download-changes">Download changes</button><button id="preview-reload-saved" hidden>Reopen saved workspace</button>';
@@ -408,13 +507,17 @@
     element('preview-reload-saved').addEventListener('click', reopenSaved);
     element('preview-retry-save').addEventListener('click', flush);
     for (const event of ['click', 'input', 'change', 'submit', 'drop']) document.addEventListener(event, schedule);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && dirty) void flush(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') { if (dirty) void flush(); }
+      else void syncNow();
+    });
+    for (const event of ['online', 'focus', 'watchify:native-active']) window.addEventListener(event, () => { void syncNow(); });
     window.addEventListener('beforeunload', event => { if (dirty || working) { event.preventDefault(); event.returnValue = ''; } });
-    loaded = true; interval = setInterval(() => { if (!document.hidden && !working && !stopped) void flush(); }, 6000); schedule();
+    loaded = true; interval = setInterval(() => { if (!document.hidden && !working && !stopped) void syncNow(); }, 15000); schedule();
   }
   function securityPage() {
-    return '<div class="preview-security"><a href="#account" class="text-link">Back to your collection</a><header class="preview-security-heading"><span class="preview-kicker">Watchify 7.0.0 · Your space</span><h1>Personal by design.</h1><p class="preview-help">Your account keeps your collection and saved changes together, in a workspace of your own.</p></header><section aria-labelledby="preview-account-heading"><h2 id="preview-account-heading">Account details</h2><dl><div><dt>Signed in as</dt><dd class="preview-account-email">' + esc(user?.email) + '</dd></div><div><dt>Your collection</dt><dd>Private to this account</dd></div><div><dt>Password recovery</dt><dd>Available from the sign-in screen</dd></div></dl><p class="preview-help">To reset your password, save your changes and sign out, then choose Forgot password? Open the newest reset email in the same browser. Email delivery must be available for your address. MFA setup is not available in this release.</p></section><div class="preview-security-note"><span class="preview-kicker">A note on the data</span><p class="preview-help">Prices, market movements and price history are illustrative in this preview. Collection details you add are saved to your private workspace.</p></div></div>';
+    return '<div class="preview-security"><a href="#account" class="text-link">Back to your collection</a><header class="preview-security-heading"><span class="preview-kicker">Watchify 7.1.0 · Your space</span><h1>Personal by design.</h1><p class="preview-help">Your account keeps your collection and saved changes together, in a workspace of your own.</p></header><section aria-labelledby="preview-account-heading"><h2 id="preview-account-heading">Account details</h2><dl><div><dt>Signed in as</dt><dd class="preview-account-email">' + esc(user?.email) + '</dd></div><div><dt>Your collection</dt><dd>Private to this account</dd></div><div><dt>Password recovery</dt><dd>Available from the sign-in screen</dd></div></dl><p class="preview-help">To reset your password, save your changes and sign out, then choose Forgot password? Open the newest reset email in the same browser. Email delivery must be available for your address. MFA setup is not available in this release.</p></section><div class="preview-security-note"><span class="preview-kicker">A note on the data</span><p class="preview-help">Prices, market movements and price history are illustrative in this preview. Collection details you add are saved to your private workspace.</p></div></div>';
   }
   function fatal() { waiting('Watchify could not be opened.', 'Your saved cloud workspace has not been replaced. Reload this page or ask João to check the test environment.'); }
-  root.WatchifyPreview = Object.freeze({ authenticate, restoreWorkspace, startSync, securityPage, fatal, assertActive: assertCurrentWorkspace });
+  root.WatchifyPreview = Object.freeze({ authenticate, restoreWorkspace, startSync, syncNow, securityPage, fatal, assertActive: assertCurrentWorkspace });
 })(globalThis);

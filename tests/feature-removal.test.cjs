@@ -91,7 +91,7 @@ test('price and review steps keep the selling flow without a trade option', () =
 
 test('release and lock versions agree and the obsolete test command is removed', () => {
   const pkg=JSON.parse(read('package.json')), lock=JSON.parse(read('package-lock.json'));
-  assert.equal(pkg.version,'7.0.0');
+  assert.equal(pkg.version,'7.1.0');
   assert.equal(lock.version,pkg.version);
   assert.equal(lock.packages[''].version,pkg.version);
   assert.equal(Object.hasOwn(pkg.scripts,'test:trades'),false);

@@ -1,10 +1,22 @@
-# Watchify 7.0.0 — Collection and pricing preview
+# Watchify 7.1.0 — Shared web and iPhone collection
 
 Watchify is a collector’s app for understanding the watches you own: your collection, value ranges, price history and market context. Version 7.0.0 follows the supplied **Valure App Direction** and **Valure Analytics** briefs, with **Watchify** retained as the product name. Valure was the briefs’ former working name.
 
-**Release state: 7.0.0 published and deployed.** Open [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/). Vercel reported deployment `dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv` **READY**, and the canonical site was visually checked on 23 November 2026: it displays Watchify 7.0.0 and opens the Create account and Back to sign in views. No real account was created or signed in during that production check.
+Version **7.1.0** keeps that interface and adds a SwiftUI/WebKit iPhone app, native file sharing, and automatic cloud refresh between open devices using the same account. The native app's independent version is **1.0**, build **1**. Open [the iPhone project guide](ios/Watchify/README.md) and [the signed distribution steps](ios/Watchify/DISTRIBUTION.md).
 
-The deployed source is GitHub commit [`24bbfd2d80f4eef66e8f5654e77b7639524f4bbb`](https://github.com/jheype/watchify/commit/24bbfd2d80f4eef66e8f5654e77b7639524f4bbb), tree `a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12`, with all 158 tracked files verified against the local source. Its immutable deployment URL is [watchify-c3ua6pcft-jheypes-projects.vercel.app](https://watchify-c3ua6pcft-jheypes-projects.vercel.app/).
+**Last verified production baseline: 7.0.0.** The 7.1.0 source and iPhone project are being prepared for publication and build verification. Open [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/). Vercel reported the previous deployment `dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv` **READY**, and the canonical site was visually checked on 23 November 2026: it displayed Watchify 7.0.0 and opened the Create account and Back to sign in views. No real account was created or signed in during that production check.
+
+The previous deployed source is GitHub commit [`24bbfd2d80f4eef66e8f5654e77b7639524f4bbb`](https://github.com/jheype/watchify/commit/24bbfd2d80f4eef66e8f5654e77b7639524f4bbb), tree `a649145241fe53ce2fc5e6bc8d6a5b6d7c240e12`, with all 158 tracked files verified against the local source. Its immutable deployment URL is [watchify-c3ua6pcft-jheypes-projects.vercel.app](https://watchify-c3ua6pcft-jheypes-projects.vercel.app/).
+
+## iPhone and automatic cloud refresh in 7.1.0
+
+The checked-in [Xcode project](ios/Watchify/Watchify.xcodeproj) contains Swift source and a shared scheme. The app presents the canonical interface in a persistent WKWebView, so the screens, calculations, collection records and account flows stay consistent with the website. Swift supplies native PDF/CSV/backup sharing, connection/retry states, foreground notifications and a privacy cover when inactive. Photo selection uses the iPhone's system chooser. No second Supabase database or native account copy is introduced.
+
+An open, visible session checks for another device's saved version every **15 seconds**, and checks again on focus, foreground entry or reconnection. Autosave remains debounced at 650 ms. The incoming workspace is adopted only when there are no unsaved local edits, open edit forms, active uploads or exports. Active forms and conflicting versions are kept for explicit recovery; a refresh never advances the optimistic concurrency version without applying its matching data. This is foreground polling, not a background task or a guarantee of instantaneous delivery. Use the same Watchify account on both devices.
+
+Native exports resolve only after the iOS activity reports completion; cancellation preserves the workspace. Password recovery opens a fixed Watchify page in the default browser so the request and emailed recovery link can use the same browser session. Return to the app and sign in after changing the password.
+
+The app targets **iOS 17 and later**. Building and signing requires a Mac with Xcode; TestFlight distribution additionally needs the owner's Apple Developer/App Store Connect team. No signing team, credentials, signed IPA or TestFlight link is supplied by the source project. The GitHub macOS workflow builds and tests without signing; its result must be verified for the exact commit.
 
 ## The 7.0.0 experience
 
@@ -66,7 +78,7 @@ Open `http://127.0.0.1:3000`. Local mode does not automatically use the hosted S
 2. Configure the desired Auth behaviour and verify the canonical Site URL and recovery redirects. Configure an email provider separately if password recovery must deliver to external addresses.
 3. Set `WATCHIFY_SUPABASE_URL` and `WATCHIFY_SUPABASE_PUBLISHABLE_KEY` for the build. These are public browser configuration; never substitute a secret or service-role key.
 4. Run the source checks and static build, then publish the exact validated source tree to [jheype/watchify](https://github.com/jheype/watchify).
-5. Deploy the complete tracked source through Vercel’s files API using the committed `vercel.json`. Version 7.0.0 used this route; automatic GitHub deployments are not connected, so a later repository commit does not automatically update the site.
+5. Deploy the exact committed web source through Vercel’s files API using the committed `vercel.json`. Exclude `ios/` and `.github/` from this web deployment and record the file manifest against the source commit. Automatic GitHub deployments are not connected, so a later repository commit does not automatically update the site.
 6. Verify the deployed version and record exactly which portfolio, account, saving/reload and separation checks have been completed. A successful build or visible account form does not establish a live-account workflow.
 
 The build command is `npm run build`; output is `dist`. Missing or unsafe Supabase configuration fails the build. Browser libraries are self-hosted. Server code, environment files, tests and documentation are excluded from the public output.
@@ -81,7 +93,9 @@ npm test
 npm run build
 ```
 
-The final integrated source passed **477/477 tests**, `npm run check`, the normal static build with the actual public Supabase configuration, and the Git whitespace check. That suite includes the 19 PDF and app-mount tests for 100-watch reports, purchase corrections, real PDF output and account-change cancellation.
+The **7.1.0** shared source passed **528/528 tests**, `npm run check`, and the normal static build with the actual public Supabase configuration. New checks cover cloud polling and version adoption, account/edit races, legacy snapshot refusal, native export completion/cancellation, UUID receipts across Swift/JavaScript and fixed browser recovery requests. The 12 native XCTest methods and the iPhone build require the macOS workflow; JavaScript success alone is not an iOS compilation result. Current evidence is in [docs/RELEASE-7.1.0-CHECKS.json](docs/RELEASE-7.1.0-CHECKS.json).
+
+The previous 7.0.0 source passed 477 tests, including 19 PDF and app-mount tests for 100-watch reports, purchase corrections, real PDF output and account-change cancellation. The following browser review remains historical 7.0.0 evidence until new checks are recorded.
 
 Desktop browser review on isolated, disposable local-state previews covered collection creation without a photo or AI, market and alert navigation, Analytics periods and indices, purchase-cost coverage/corrections, brand drill-down, trading context and a real PDF download with correct items and totals. On the production URL, the 7.0.0 Auth design and Create account/Back to sign in navigation were checked.
 
@@ -99,7 +113,10 @@ The remaining verification limits are explicit: no real production signup/sign-i
 | `src/valuation-report.js`, `src/vendor/pdf-lib.min.js` | Local, multipage valuation PDF generation and the self-hosted MIT-licensed library. |
 | `src/preview-auth.js`, `src/preview-auth.css` | Hosted account access, account screen and cloud-save status. |
 | `src/cloud-workspace.js` | Supabase persistence, version checks and protection against account changes. |
+| `src/native-bridge.js` | Bounded iPhone export and fixed recovery messages, without credential access. |
 | `src/workspace-snapshot.js` | Portfolio and legacy-state validation, durable media and secret exclusion. |
+| `ios/Watchify/` | SwiftUI/WebKit iPhone app, Xcode project, icon, native tests and distribution guide. |
+| `.github/workflows/watchify-ios.yml` | macOS/Xcode simulator tests and unsigned device compilation. |
 | `supabase/migrations/` | Existing workspace schema and per-account access policies. |
 | `tools/build-static.cjs` | Public frontend build with the configured Supabase project. |
 | `server/` | Retained local integration server, excluded from the hosted build. |

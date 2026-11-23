@@ -21,3 +21,14 @@ body.pf-app .preview-toolbar,body.pf-app .preview-recovery{margin-left:var(--sid
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 @media(max-width:760px){.pf-region-table{min-width:660px}.pf-market-table.pf-region-table .pf-region-column{display:table-cell}}
+
+/* Keep iPhone controls usable without Safari's automatic text-field zoom. */
+@media(max-width:760px){
+  input:not([type=checkbox]):not([type=radio]),select,textarea,
+  .pf-step-body input[type=search],.pf-step-body select,.pf-search input,
+  .pf-market-filters select,.pf-modal-body input,.pf-modal-body select{font-size:16px}
+  body.pf-app #main{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+  .pf-periods button,.pf-tabs button,.pf-icon-button{min-height:44px}
+  #toast{bottom:calc(87px + env(safe-area-inset-bottom,0px))}
+}
+.watchify-ios{overscroll-behavior-y:contain}

@@ -11,3 +11,13 @@ coverage/
 playwright-report/
 test-results/
 supabase/.temp/
+
+# Local Apple builds, signing material and personal Xcode settings.
+DerivedData/
+*.xcarchive/
+*.xcresult/
+*.ipa
+*.p12
+*.mobileprovision
+xcuserdata/
+*.xcuserstate

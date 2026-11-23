@@ -10,8 +10,8 @@
     if (!client?.auth?.getUser || !client?.from) throw new TypeError('An official Supabase client is required.');
     if (storage === undefined) { try { storage = root.sessionStorage || null; } catch { storage = null; } }
     const scope = namespace || client.supabaseUrl || root.WATCHIFY_CONFIG?.supabaseUrl || 'watchify';
-    let epoch = 0, disposed = false, loaded = false, userId = null, observedUserId, version = null, updatedAt = null, pending = null, inFlight = null, blocked = false;
-    let status = { state: 'idle', userId: null, version: null, updatedAt: null, pending: false, recoveryAvailable: false, error: null };
+    let epoch = 0, disposed = false, loaded = false, userId = null, observedUserId, version = null, updatedAt = null, pending = null, inFlight = null, blocked = false, checking = false;
+    let status = { state: 'idle', userId: null, version: null, updatedAt: null, pending: false, recoveryAvailable: false, error: null, syncError: null };
     const getStatus = () => clone(status);
     function emit(state, failure = null) {
       if (disposed) return;
@@ -81,6 +81,7 @@
         checkEpoch(start);
         const remote = row ? validateSnapshot(row.snapshot) : null;
         userId = id; version = row?.version ?? null; updatedAt = row?.updated_at ?? null; loaded = true; blocked = false;
+        status.syncError = null;
         pending = discardPending ? null : recover(id);
         // A previous response may have been lost after the database committed the write.
         if (pending && row?.save_id === pending.saveId) pending = null;
@@ -95,6 +96,46 @@
         if (start === epoch) emit(issue.code === 'AUTH_REQUIRED' ? 'signed_out' : issue.retryable ? 'offline' : 'error', issue);
         throw issue;
       }
+    }
+    // A poll reads only metadata until another device has saved a new version.
+    // The caller must synchronously adopt the snapshot and return true. Advancing
+    // the CAS version without adopting its data could overwrite another device.
+    async function refresh({ applySnapshot } = {}) {
+      if (disposed || !loaded || !userId) throw error('LOAD_REQUIRED', 'Open your signed-in workspace before checking for changes.');
+      if (typeof applySnapshot !== 'function') throw new TypeError('A synchronous snapshot adoption callback is required.');
+      if (pending || inFlight || blocked || checking) return { changed: false, deferred: true };
+      const start = epoch, baseVersion = version;
+      const stillClean = () => !pending && !inFlight && !blocked && version === baseVersion;
+      checking = true;
+      try {
+        const id = await identity(start);
+        const metadata = await readRow(id, false);
+        checkEpoch(start);
+        if (!stillClean()) return { changed: false, deferred: true };
+        if ((metadata?.version ?? null) === version) {
+          status.syncError = null; emit(status.state);
+          return { changed: false, version, updatedAt };
+        }
+        if (!metadata || (version !== null && metadata.version < version)) throw error('SYNC_FAILED', 'The saved workspace could not be checked. Your current copy has been kept.');
+        const row = await readRow(id);
+        checkEpoch(start);
+        if (!stillClean()) return { changed: false, deferred: true };
+        if (!row || row.version < metadata.version) throw error('SYNC_FAILED', 'The saved workspace changed during checking. Your current copy has been kept.');
+        const snapshot = validateSnapshot(row.snapshot);
+        if (applySnapshot(clone(snapshot)) !== true) return { changed: false, deferred: true };
+        checkEpoch(start);
+        version = row.version; updatedAt = row.updated_at;
+        status.syncError = null;
+        emit('saved');
+        return { changed: true, version, updatedAt };
+      } catch (failure) {
+        const issue = normalise(failure, 'SYNC_FAILED');
+        if (start === epoch && stillClean()) {
+          if (['AUTH_REQUIRED', 'AUTH_CHANGED'].includes(issue.code)) emit('signed_out', issue);
+          else { status.syncError = { code: issue.code, message: issue.message, retryable: !!issue.retryable }; emit(status.state); }
+        }
+        throw issue;
+      } finally { checking = false; }
     }
     async function write(job, id, reconciled = false) {
       let response;
@@ -151,6 +192,7 @@
             }
             checkEpoch(start);
             version = row.version; updatedAt = row.updated_at;
+            status.syncError = null;
             if (pending === job) pending = null;
             else pending.baseVersion = version;
             remember();
@@ -197,10 +239,11 @@
       // Do not call other Supabase auth methods inside its auth-state callback.
       epoch++; loaded = false; userId = null; version = null; updatedAt = null; pending = null; blocked = false;
       status.recoveryAvailable = false;
+      status.syncError = null;
       emit('signed_out', error('AUTH_CHANGED', 'The signed-in account changed. Reopen your private workspace.'));
     })?.data?.subscription;
     function dispose() { remember(); disposed = true; epoch++; subscription?.unsubscribe(); }
-    return Object.freeze({ load, save, retry, getStatus, exportPending, dispose });
+    return Object.freeze({ load, save, retry, refresh, getStatus, exportPending, dispose });
   }
   const api = Object.freeze({ create });
   root.WatchifyCloudWorkspace = api;

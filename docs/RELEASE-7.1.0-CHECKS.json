@@ -1,0 +1,86 @@
+{
+  "version": "7.1.0",
+  "native_version": "1.0",
+  "native_build": 1,
+  "prepared_at_utc": "2026-11-23T15:50:18.661449+00:00",
+  "state": "source_validated_awaiting_publication_and_xcode",
+  "scope": {
+    "interface": "Same canonical Watchify web interface hosted in SwiftUI/WKWebView",
+    "canonical_url": "https://watchify-azure.vercel.app/",
+    "supabase_project": "iqfsalmepkcjawyukiie",
+    "same_account_same_workspace": true,
+    "foreground_poll_interval_seconds": 15,
+    "autosave_debounce_milliseconds": 650,
+    "refresh_events": [
+      "visibility",
+      "focus",
+      "online",
+      "watchify:native-active"
+    ],
+    "refresh_guards": [
+      "local edits",
+      "focused fields",
+      "add-watch draft",
+      "changed profile form",
+      "open modal",
+      "uploads",
+      "exports",
+      "account generation",
+      "optimistic cloud version",
+      "legacy snapshot missing portfolio"
+    ],
+    "native_exports": [
+      "PDF",
+      "CSV",
+      "Watchify recovery JSON"
+    ],
+    "native_export_receipt": "Matching UUID, completed activity required; cancellation and account change preserve data",
+    "password_recovery": "Fixed canonical browser request page; no URL, credential or token accepted by native recovery bridge",
+    "native_navigation": "Canonical HTTPS origin; app-bound domains; back-swipe disabled",
+    "minimum_ios": "17.0",
+    "database_schema_policy_or_auth_settings_changed": false,
+    "new_marketplace_or_live_pricing": false
+  },
+  "verification": {
+    "node_suite": {
+      "command": "npm test",
+      "tests": 528,
+      "pass": 528,
+      "fail": 0,
+      "skipped": 0
+    },
+    "javascript_syntax": "passed",
+    "static_build": "passed with existing public Supabase configuration",
+    "xcode_project_plist_scheme_workflow_structure": "passed",
+    "native_policy_test_methods": 12,
+    "native_build_and_test_status": "not_run_yet; macOS GitHub workflow prepared",
+    "icon": {
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "alpha": false
+    },
+    "iphone_installation": "not performed",
+    "real_account_cross_device_sync": "not performed",
+    "camera_photo_selection_on_ios": "not performed",
+    "native_share_sheet_on_ios": "not performed",
+    "password_recovery_email_delivery": "not performed"
+  },
+  "distribution": {
+    "signed_ipa": false,
+    "testflight_upload": false,
+    "owner_apple_team_selected": false,
+    "simulator_artifact_is_not_iphone_installable": true
+  },
+  "previous_production": {
+    "version": "7.0.0",
+    "deployment_id": "dpl_GWS5NBm3Rztt7KQXZFafo4wtN9qv",
+    "source_commit": "24bbfd2d80f4eef66e8f5654e77b7639524f4bbb"
+  },
+  "limitations": [
+    "Native Swift changes need a new signed build; compatible hosted UI changes use the same canonical source.",
+    "Polling runs only while visible and clean; simultaneous edits are preserved as conflicts, not merged.",
+    "Internet is required for first load and cloud access. No background sync or full offline workflow is promised.",
+    "Pricing and market data retain the existing illustrative dataset."
+  ]
+}

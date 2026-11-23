@@ -1,0 +1,100 @@
+name: Watchify iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/watchify-ios.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - ".github/workflows/watchify-ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: watchify-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Xcode 26.3 · iPhone Simulator and device build
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - name: Check out the exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify Xcode and project metadata
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          plutil -lint ios/Watchify/Watchify/Info.plist ios/Watchify/Watchify/PrivacyInfo.xcprivacy
+          xcodebuild -list -project ios/Watchify/Watchify.xcodeproj
+
+      - name: Select an available iOS 26 iPhone simulator
+        id: simulator
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          catalogue = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "--json"], text=True))
+          candidates = [(runtime, device) for runtime, devices in catalogue["devices"].items()
+                        if ".iOS-26-" in runtime for device in devices
+                        if device.get("isAvailable") and device["name"].startswith("iPhone")]
+          if not candidates:
+              raise SystemExit("The selected Xcode image has no available iOS 26 iPhone simulator.")
+          runtime, device = sorted(candidates, key=lambda item: (item[0], item[1]["name"]), reverse=True)[0]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("destination=platform=iOS Simulator,id=" + device["udid"] + "\n")
+          print("Testing on " + device["name"] + " / " + runtime)
+          PY
+
+      - name: Build and run native policy tests
+        run: |
+          xcodebuild test \
+            -project ios/Watchify/Watchify.xcodeproj \
+            -scheme Watchify \
+            -configuration Debug \
+            -destination '${{ steps.simulator.outputs.destination }}' \
+            -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/WatchifyDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/WatchifyTests.xcresult" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Compile the release app for iPhone without signing
+        run: |
+          xcodebuild build \
+            -project ios/Watchify/Watchify.xcodeproj \
+            -scheme Watchify \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/WatchifyDeviceDerivedData" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package the simulator app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$RUNNER_TEMP/WatchifyDerivedData/Build/Products/Debug-iphonesimulator/Watchify.app" \
+            "$RUNNER_TEMP/Watchify-Simulator.zip"
+
+      - name: Keep test results and simulator build
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Watchify-iOS-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/WatchifyTests.xcresult
+            ${{ runner.temp }}/Watchify-Simulator.zip
+          if-no-files-found: warn
+          retention-days: 7
+
+# The simulator ZIP cannot be installed on a physical iPhone. A signed archive
+# and the owner's Apple Developer team are required for TestFlight distribution.

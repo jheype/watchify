@@ -35,12 +35,12 @@
   }
 
   function gate(body) {
-    element('header').innerHTML = '<div class="container"><a class="preview-wordmark" href="/">watchify</a></div>';
-    element('main').innerHTML = '<div class="preview-gate"><section class="preview-card">' + body + '</section></div>';
+    element('header').innerHTML = '';
+    element('main').innerHTML = '<div class="preview-gate"><div class="preview-shell"><aside class="preview-editorial" aria-label="About Watchify"><a class="preview-wordmark" href="/" aria-label="Watchify home">watchify<span class="preview-brand-dot" aria-hidden="true"></span></a><div class="preview-editorial-copy"><p class="preview-kicker">A collector’s perspective</p><p class="preview-editorial-title">Know what<br> you own.</p><p class="preview-editorial-description">Your watches. Their value. A clearer view of your collection and the market around it.</p></div><figure class="preview-editorial-photo"><img src="assets/hero-rolex.webp" width="840" height="560" alt="Close-up of a Rolex Submariner dial and bezel"><figcaption><span>Every detail has a story.</span><span>Reference imagery</span></figcaption></figure><p class="preview-editorial-footnote">Collection · Price history · Market perspective</p></aside><section class="preview-card">' + body + '</section></div></div>';
     element('footer').innerHTML = '';
   }
   function waiting(title, text) {
-    gate('<span class="preview-kicker">Zeit preview</span><h1>' + esc(title) + '</h1><p role="status">' + esc(text) + '</p>');
+    gate('<span class="preview-kicker">Watchify 7.0.0 · Preview</span><span class="preview-loading-mark" aria-hidden="true"></span><h1>' + esc(title) + '</h1><p role="status">' + esc(text) + '</p>');
   }
   function safeMessage(error, fallback) {
     if (error?.code === 'invalid_credentials') return 'The email or password is incorrect.';
@@ -107,11 +107,11 @@
       function render(mode = 'signin', email = '', message = '') {
         const version = ++rendering;
         const signup = mode === 'signup', password = signup || mode === 'signin';
-        const titles = { signin: 'A closer look at Watchify.', signup: 'Create your Watchify account.', reset: 'Reset your password.' };
-        const descriptions = { signin: 'Sign in to explore Watchify and save changes to your own workspace.', signup: 'Create your account with an email and password to start testing.', reset: 'Enter your email to request a password reset link.' };
-        const actions = { signin: 'Enter Watchify', signup: 'Create account', reset: 'Request reset link' };
+        const titles = { signin: 'Your collection awaits.', signup: 'Begin your collection.', reset: 'A fresh start.' };
+        const descriptions = { signin: 'Sign in for a closer look at your watches and their value.', signup: 'Create a private space for your watches, price history and market perspective.', reset: 'Enter your account email. We’ll request a link to reset your password.' };
+        const actions = { signin: 'Sign in to Watchify', signup: 'Create account', reset: 'Request reset link' };
         const links = mode === 'signin' ? '<button id="preview-create-account" type="button">Create account</button><button id="preview-forgot-password" type="button">Forgot password?</button>' : '<button id="preview-back-signin" type="button">Back to sign in</button>';
-        gate('<span class="preview-kicker">Watchify 6.4.3 · Preview</span><h1>' + titles[mode] + '</h1><p>' + descriptions[mode] + '</p><p class="preview-message" id="preview-auth-message" role="status">' + esc(message) + '</p><form id="preview-login" class="preview-form"><label>Email<input id="preview-auth-email" name="email" type="email" autocomplete="username" maxlength="254" value="' + esc(email) + '" required></label>' + (password ? '<label>Password<input id="preview-auth-password" name="password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" ' + (signup ? 'minlength="12" ' : '') + 'maxlength="256" required></label>' : '') + (signup ? '<p class="preview-password-help">Use at least 12 characters.</p><label>Confirm password<input id="preview-auth-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>' : '') + '<p class="preview-error" id="preview-login-error" role="alert"></p><button id="preview-auth-submit" class="btn primary full" type="submit">' + actions[mode] + '</button></form><nav class="preview-auth-links" aria-label="Account access">' + links + '</nav><p class="preview-note">Each account has a separate workspace. Orders, messages and payments use sample data; no purchases or payments are made.</p>');
+        gate('<span class="preview-kicker">Watchify 7.0.0 · Preview</span><h1>' + titles[mode] + '</h1><p>' + descriptions[mode] + '</p><p class="preview-message" id="preview-auth-message" role="status">' + esc(message) + '</p><form id="preview-login" class="preview-form"><label>Email address<input id="preview-auth-email" name="email" type="email" autocomplete="username" maxlength="254" value="' + esc(email) + '" required></label>' + (password ? '<label>Password<input id="preview-auth-password" name="password" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" ' + (signup ? 'minlength="12" aria-describedby="preview-password-help" ' : '') + 'maxlength="256" required></label>' : '') + (signup ? '<p class="preview-password-help" id="preview-password-help">Use at least 12 characters.</p><label>Confirm password<input id="preview-auth-confirm" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>' : '') + '<p class="preview-error" id="preview-login-error" role="alert"></p><button id="preview-auth-submit" class="btn primary full" type="submit">' + actions[mode] + '</button></form><nav class="preview-auth-links" aria-label="Account access">' + links + '</nav><p class="preview-note">Your collection is private to your account.<br>Market prices and movements are illustrative in this preview.</p>');
         const form = element('preview-login'), button = element('preview-auth-submit'), errorText = element('preview-login-error');
         const navigate = next => { if (!button.disabled) render(next, element('preview-auth-email').value.trim()); };
         element('preview-create-account')?.addEventListener('click', () => navigate('signup'));
@@ -159,7 +159,7 @@
     if (seeded.error) throw seeded.error;
     const verified = await recoveryClient.auth.getUser();
     if (verified.error || verified.data?.user?.id !== account.id || verified.data.user.is_anonymous) throw verified.error || sessionChanged();
-    gate('<span class="preview-kicker">Watchify account</span><h1>Choose a new password.</h1><p>Set a password with at least 12 characters for the account in your reset link.</p><form id="preview-reset-password" class="preview-form"><label>New password<input id="preview-new-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><label>Confirm new password<input id="preview-confirm-password" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><p id="preview-reset-error" class="preview-error" role="alert"></p><button id="preview-reset-submit" class="btn primary full" type="submit">Save new password</button></form><nav class="preview-auth-links"><button id="preview-reset-cancel" type="button">Back to sign in</button></nav>');
+    gate('<span class="preview-kicker">Watchify 7.0.0 · Account access</span><h1>A new password.</h1><p id="preview-reset-help">Choose at least 12 characters for the account in your reset link.</p><form id="preview-reset-password" class="preview-form"><label>New password<input id="preview-new-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" aria-describedby="preview-reset-help" required></label><label>Confirm new password<input id="preview-confirm-password" name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><p id="preview-reset-error" class="preview-error" role="alert"></p><button id="preview-reset-submit" class="btn primary full" type="submit">Save new password</button></form><nav class="preview-auth-links" aria-label="Account access"><button id="preview-reset-cancel" type="button">Back to sign in</button></nav>');
     return new Promise(resolve => {
       const form = element('preview-reset-password'), button = element('preview-reset-submit'), cancel = element('preview-reset-cancel');
       cancel.addEventListener('click', () => { if (!button.disabled) { form.reset(); resolve('Sign in to continue. Your password has not been changed.'); } });
@@ -207,7 +207,7 @@
     } finally { cleanUrl(); }
   }
   async function retryGate(title, text) {
-    gate('<span class="preview-kicker">Zeit preview</span><h1>' + esc(title) + '</h1><p>' + esc(text) + '</p><button id="preview-retry-load" class="btn primary full">Try again</button>');
+    gate('<span class="preview-kicker">Watchify 7.0.0 · Preview</span><h1>' + esc(title) + '</h1><p>' + esc(text) + '</p><button id="preview-retry-load" class="btn primary full">Try again</button>');
     await new Promise(resolve => element('preview-retry-load').addEventListener('click', resolve, { once: true }));
   }
   async function authenticate() {
@@ -377,7 +377,7 @@
     setWorkspaceInert(true);
     const modal = element('modal'); if (modal?.open) modal.close();
     const overlay = document.createElement('section'); overlay.className = 'preview-lock'; overlay.setAttribute('role', 'alertdialog'); overlay.setAttribute('aria-modal', 'true'); overlay.setAttribute('aria-labelledby', 'preview-lock-title');
-    overlay.innerHTML = '<div class="preview-card"><span class="preview-kicker">Session changed</span><h1 id="preview-lock-title">Sign in again.</h1><p>Saving has stopped because your account session changed. You can download the changes in this tab before reopening Watchify, provided a different account is not signed in.</p><p class="preview-error" id="preview-lock-error" role="alert"></p><div class="preview-form"><button class="btn primary" id="preview-lock-export">Download changes</button><button class="btn outline" id="preview-lock-reload">Return to sign-in</button></div></div>';
+    overlay.innerHTML = '<div class="preview-card"><span class="preview-kicker">Watchify 7.0.0 · Session changed</span><h1 id="preview-lock-title">Sign in again.</h1><p>Saving has paused because your account session changed. You can download your changes before reopening Watchify, provided a different account is not signed in.</p><p class="preview-error" id="preview-lock-error" role="alert"></p><div class="preview-form"><button class="btn primary" id="preview-lock-export">Download changes</button><button class="btn outline" id="preview-lock-reload">Return to sign-in</button></div></div>';
     document.body.appendChild(overlay);
     element('preview-lock-export').addEventListener('click', exportChanges);
     element('preview-lock-reload').addEventListener('click', () => location.reload());
@@ -397,8 +397,8 @@
   }
   function startSync() {
     assertCurrentWorkspace();
-    const bar = document.createElement('aside'); bar.id = 'preview-toolbar'; bar.className = 'preview-toolbar'; bar.setAttribute('aria-label', 'Test workspace');
-    bar.innerHTML = '<div class="preview-toolbar-copy"><strong>ZEIT TEST</strong><span>Sample orders and messages · no real payments</span></div><div class="preview-toolbar-actions"><span id="preview-save-status" class="preview-status" role="status"></span><button id="preview-signout" type="button">Sign out</button></div>';
+    const bar = document.createElement('aside'); bar.id = 'preview-toolbar'; bar.className = 'preview-toolbar'; bar.setAttribute('aria-label', 'Collection workspace');
+    bar.innerHTML = '<div class="preview-toolbar-copy"><strong>WATCHIFY PREVIEW</strong><span class="preview-version">7.0.0</span><span>Illustrative market data</span></div><div class="preview-toolbar-actions"><span id="preview-save-status" class="preview-status" role="status"></span><button id="preview-signout" type="button">Sign out</button></div>';
     document.body.insertBefore(bar, element('header'));
     const recovery = document.createElement('aside'); recovery.id = 'preview-save-recovery'; recovery.className = 'preview-recovery'; recovery.hidden = true;
     recovery.innerHTML = '<p id="preview-save-error" role="alert"></p><button id="preview-retry-save">Retry saving</button><button id="preview-download-changes">Download changes</button><button id="preview-reload-saved" hidden>Reopen saved workspace</button>';
@@ -413,7 +413,7 @@
     loaded = true; interval = setInterval(() => { if (!document.hidden && !working && !stopped) void flush(); }, 6000); schedule();
   }
   function securityPage() {
-    return '<div class="preview-security"><a href="#account" class="text-link">Back to My Watchify</a><h1>Your account.</h1><p class="preview-help">Your sign-in and saved workspace are connected. Each account has its own workspace.</p><section><dl><div><dt>Signed in as</dt><dd class="preview-account-email">' + esc(user?.email) + '</dd></div><div><dt>Saved changes</dt><dd>Private to this account</dd></div><div><dt>Password recovery</dt><dd>Available from the sign-in screen</dd></div></dl><p class="preview-help">To reset your password, sign out after saving, then choose Forgot password? Open the newest reset email in the same browser. Email delivery must be available for your address. MFA setup is not available in this release.</p></section><p class="preview-help">The marketplace uses sample listings, messages and orders. Uploaded test data is saved to your workspace. Please use sample information during testing.</p></div>';
+    return '<div class="preview-security"><a href="#account" class="text-link">Back to your collection</a><header class="preview-security-heading"><span class="preview-kicker">Watchify 7.0.0 · Your space</span><h1>Personal by design.</h1><p class="preview-help">Your account keeps your collection and saved changes together, in a workspace of your own.</p></header><section aria-labelledby="preview-account-heading"><h2 id="preview-account-heading">Account details</h2><dl><div><dt>Signed in as</dt><dd class="preview-account-email">' + esc(user?.email) + '</dd></div><div><dt>Your collection</dt><dd>Private to this account</dd></div><div><dt>Password recovery</dt><dd>Available from the sign-in screen</dd></div></dl><p class="preview-help">To reset your password, save your changes and sign out, then choose Forgot password? Open the newest reset email in the same browser. Email delivery must be available for your address. MFA setup is not available in this release.</p></section><div class="preview-security-note"><span class="preview-kicker">A note on the data</span><p class="preview-help">Prices, market movements and price history are illustrative in this preview. Collection details you add are saved to your private workspace.</p></div></div>';
   }
   function fatal() { waiting('Watchify could not be opened.', 'Your saved cloud workspace has not been replaced. Reload this page or ask João to check the test environment.'); }
   root.WatchifyPreview = Object.freeze({ authenticate, restoreWorkspace, startSync, securityPage, fatal, assertActive: assertCurrentWorkspace });

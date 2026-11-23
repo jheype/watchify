@@ -1,29 +1,41 @@
-# Watchify 6.4.3 preview for Zeit
+# Watchify 7.0.0 preview for Zeit
 
-The hosted preview publishes the existing Watchify frontend and uses Supabase for authenticated preview data. The local Node integration server remains a separate local development tool.
+The 7.0.0 source redesigns Watchify around collection, pricing and Analytics, following the supplied Valure App Direction and Valure Analytics briefs. **Watchify remains the product name.** The hosted build retains Supabase account access and private saved workspaces. The local Node integration server remains a separate development tool.
 
-## 6.4.3 status
+## 7.0.0 release checkpoint
 
-The owner requested registration without email confirmation. The frontend has been updated for direct signup and still requires a server-verified, non-anonymous session before opening a private workspace. The confirmation-resend UI has been removed. The live Supabase setting remained `mailer_autoconfirm: false` when checked on 20 November 2026 at 21:56:05 UTC; changing it to `true` is still pending. The 6.4.3 frontend is deployed and verified READY. Enabling direct signup on the server still requires access to the authenticated Supabase dashboard.
+**Prepared locally; final validation and publication pending.** Collection, Market, Analytics, Add a watch and Alerts form the new interface. The old commerce modules and valid saved data remain for compatibility, but their buying, selling, offers, orders and payment screens are not mounted. No prior valid workspace is intentionally deleted or converted into a portfolio holding.
 
-## Current deployment (6.4.3)
+Every value, range, historical series, movement and UK/US/Hong Kong comparison is **illustrative sample data as of 20 November 2026**. The portfolio model uses GBP as its base. GBP, USD and EUR display choices use fixed illustrative exchange rates, and every regional comparison uses the same selected display currency. There is no live pricing backend. The digest and alerts are in-app sample views; no scheduled digest, email, push or external notification is sent.
+
+The Auth screens are restyled for the new visual direction and display 7.0.0. Their existing session verification, recovery and cloud-save lifecycle are unchanged. A version badge or successful local test is not evidence that the release is deployed or that a real account flow has passed.
+
+### Analytics behaviour in the pending release
+
+Optional purchase prices and purchase months can be recorded when adding a piece and edited later. Gain cards explicitly report partial cost coverage; unknown prices are excluded and zero cost never produces an invented percentage. Collection comparisons and Market indices share the same fixed sample basket. The portfolio chart rebases both series for its period, while the index page retains the common historical origin and exposes weights/contributions. Brand allocation opens the relevant private holdings. Liquidity and supply are dated illustrative context, not observed transactions or active offers. Market movers cover week/month/year periods and show up to ten matching results, bounded by the eight-reference sample catalogue.
+
+The valuation action generates an actual PDF in the browser using the local `pdf-lib` 1.17.1 bundle. It includes every selected collection piece (up to 100), specification, value/range, totals, source date and download time. Serials appear only if entered; the report is marked “Illustrative estimate · not a formal appraisal” and discloses the absence of a live feed. GBP is the base, with selected GBP/USD/EUR presentation and an explicit fixed illustrative conversion rate where relevant. No report data is sent to another service. The generated download is cancelled after a session, collection, name, currency or page lifecycle change. The public bundle carries the full MIT notice; no CDN, runtime fetch or new server route is needed. Portuguese accents are supported and unsupported characters fail clearly before a PDF is downloaded.
+
+## Last verified production deployment (6.4.3)
+
+The following is the production baseline verified before the redesign, not a 7.0.0 deployment:
 
 - **Canonical public URL:** [https://watchify-azure.vercel.app/](https://watchify-azure.vercel.app/)
 - Additional alias: [https://watchify-jheypes-projects.vercel.app/](https://watchify-jheypes-projects.vercel.app/)
 - Immutable deployment URL: [https://watchify-bdhs11b68-jheypes-projects.vercel.app/](https://watchify-bdhs11b68-jheypes-projects.vercel.app/)
-- Deployment ID: `dpl_2BH1KQrpwgfcUsPHzprefchkrAXm`; Vercel status **READY**, confirmed for the production deployment.
+- Deployment ID: `dpl_2BH1KQrpwgfcUsPHzprefchkrAXm`; Vercel status **READY**.
 - Deployed GitHub source commit: [`171f6b0b4a43565538476b2e874b01bbd2e76eb3`](https://github.com/jheype/watchify/commit/171f6b0b4a43565538476b2e874b01bbd2e76eb3).
-- Deployed source tree: `7173259d7519e8f6928d4f699f072d50cfa8f6d1`, containing all 142 tracked source files. The static build publishes only its permitted frontend output.
+- Deployed source tree: `7173259d7519e8f6928d4f699f072d50cfa8f6d1`, containing all 142 tracked source files.
 
-The canonical alias opened in a browser without requesting a Vercel login. Version 6.4.3 was visible, Create account used neutral signup copy, and confirmation-resend controls were absent. This confirms frontend delivery and form behaviour. Successful direct signup still depends on the pending server confirmation toggle; sign-in, recovery and persistence require live end-to-end verification.
+The deployment and alias were checked again before the 7.0.0 changes; the remote GitHub tree matched the local starting tree. The historical 6.4.3 browser check showed a public page without Vercel login, version 6.4.3 and a Create account form. Its independent HTTP check returned `200` for the frontend, byte-identical Auth/app/cloud scripts and the intended Supabase runtime configuration. `/server/start.cjs`, `/.env` and `/api/health` returned `404`, and both private tables denied anonymous REST reads with HTTP `401` / code `42501`.
 
-Independent HTTP requests without cookies or authorisation also returned `200` for `/` and `/src/runtime-config.js`; the runtime configuration points to the Watchify Supabase project. `/server/start.cjs`, `/.env` and `/api/health` returned `404`. Public responses included `X-Robots-Tag: noindex, nofollow, noarchive`. The public Auth, app and cloud-workspace scripts were byte-identical to the published source. Anonymous REST reads of `preview_testers` and `tester_workspaces` returned HTTP `401` with permission-denied code `42501`; no account credentials were sent. This does not establish isolation between two authenticated browser accounts.
+These are delivery and access-boundary checks from the previous release. They do not establish real-account signup, password recovery, two-account separation or persistence in the redesigned interface. Preserve the complete historical evidence in `docs/RELEASE-6.4.3-CHECKS.json`.
 
-Native Vercel access to the owner-confirmed team is authorised. This deployment used file uploads and the official deployment API. Vercel's GitHub integration is not installed, and automatic deployments from repository commits are not connected. A later documentation-only GitHub commit does not change this deployed source tree.
+Native Vercel access is authorised for the owner-confirmed `jheypes-projects` team. The established deployment used the official files API. Automatic GitHub deployment was not connected in that release; publishing a repository commit alone must not be reported as a site update.
 
 ## Hosting configuration
 
-The deployed project is in the owner-confirmed Vercel team `jheypes-projects`. Redeploy through the files API, or install and connect Vercel's GitHub integration before using repository imports. The committed `vercel.json` selects these settings:
+Deploy to the existing Watchify project in `jheypes-projects`. The committed `vercel.json` selects:
 
 | Setting | Value |
 | --- | --- |
@@ -31,47 +43,51 @@ The deployed project is in the owner-confirmed Vercel team `jheypes-projects`. R
 | Install command | `npm ci --ignore-scripts` |
 | Build command | `node tools/build-static.cjs` |
 | Output directory | `dist` |
+| Node version | 22.x in the verified Vercel project |
 
-Set these two environment variables on the Vercel environments intended for Zeit testing, then deploy:
+Set these two environment variables for the intended deployment environment:
 
 | Variable | Value |
 | --- | --- |
-| `WATCHIFY_SUPABASE_URL` | The HTTPS URL of the dedicated Supabase preview project, such as `https://<project-ref>.supabase.co` |
-| `WATCHIFY_SUPABASE_PUBLISHABLE_KEY` | That project's publishable key, or its legacy `anon` key |
+| `WATCHIFY_SUPABASE_URL` | `https://iqfsalmepkcjawyukiie.supabase.co` for the dedicated Watchify project |
+| `WATCHIFY_SUPABASE_PUBLISHABLE_KEY` | That project’s public publishable key, or its legacy `anon` key |
 
-Both values are intentionally public and are included in the browser configuration. Never place a Supabase secret key, service-role key, database password, Talia credential, or ChatGPT session credential in either variable. Access to data must be enforced by Supabase authentication and row-level security.
+Both are intentionally included in browser configuration. Never put a secret key, service-role key, database password or local integration credential in either variable. Authentication and row-level security enforce data access.
 
-The build fails when the configuration is missing, when the URL is not a standard HTTPS Supabase project origin, or when the supplied key is a secret/service-role key. A legacy anon JWT must name the same Supabase project as the URL.
+The build rejects missing configuration, a nonstandard HTTPS Supabase origin, a secret/service-role key or a legacy anon JWT naming another project. It recreates `dist` from the permitted frontend files and the pinned browser SDK, and generates `src/runtime-config.js` using only those two public values.
 
 ## Public build boundary
 
-The build recreates `dist` from the frontend `index.html`, permitted files under `src` and `assets`, and the pinned Supabase SDK's browser bundle. It generates `src/runtime-config.js` from only the two public variables above. It does not publish the repository root, local server, `.env` files, tests, dependency tree, or deployment documentation. Symlinks in the public source trees cause the build to fail.
+The output contains `index.html`, `robots.txt`, permitted `src`/`assets` files, the self-hosted Supabase browser bundle and the locally vendored PDF library. The repository root, Node server, environment files, tests, dependency tree and documentation are excluded. The PDF library’s complete MIT notice is also embedded in its JavaScript file so it accompanies the public build. Symlinks in public source trees fail the build.
 
-The generated HTML permits browser API requests only to the same origin and the configured Supabase project. Scripts and styles are self-hosted. The Vercel response headers block embedding, prevent MIME sniffing, suppress referrers, and request exclusion from search engines. `robots.txt` and the HTML robots directive also request no indexing. These indexing controls do not restrict access to the site; use the app's preview authentication and any agreed Vercel deployment access controls.
+The generated page permits browser connections only to its own origin and the configured Supabase project. Response headers prevent embedding and MIME sniffing, suppress referrers and request exclusion from indexing. Indexing directives do not make a URL private. The app retains its account gate; the final deployment must be verified separately.
 
-The app uses hash navigation, so the preview does not rewrite unknown paths to `index.html`. Local integration routes such as `/api/*` are not deployed.
+Navigation uses hashes. Unknown paths are not rewritten to `index.html`, and `/api/*` local integration routes are not deployed. A source upload does not establish an external pricing feed or email-digest backend.
 
-## Supabase and access setup
+## Supabase and account setup
 
-Use the Watchify project (`iqfsalmepkcjawyukiie`) in the TripApp organisation. It is separate from the preserved Trip project. Apply the complete committed migration history when provisioning another environment. The 6.4.2 migration removes the old tester allowlist requirement without deleting any workspace. Each authenticated, non-anonymous account can read and save only its own workspace.
+Use **Watchify** (`iqfsalmepkcjawyukiie`) in the **TripApp** organisation. This project has its own database and remains separate from the retained Trip project. Apply the existing complete migration history when provisioning another environment. The public-account policy supports each authenticated, non-anonymous user reading and saving only their own workspace, without the former tester allowlist.
 
-In 6.4.3 the sign-in screen includes Create account and Forgot password. Configure Supabase with public email signup enabled, email confirmation disabled (`mailer_autoconfirm: true`) and anonymous sign-in disabled, as requested by the owner. The last observed server setting still requires confirmation, so direct signup is not yet verified. Password recovery continues to require an email provider and working redirects. Follow `docs/SUPABASE_PREVIEW.md` for the current project state and supported handling of older unconfirmed accounts.
+The redesign adds a validated portfolio section inside the existing JSON snapshot. It does not require a new SQL migration or loosen account access. A legacy workspace without portfolio data stays compatible; valid legacy business records remain preserved.
 
-Auth's Site URL and allowed redirect URLs still need configuration and verification for the canonical origin `https://watchify-azure.vercel.app/`. The app supplies `origin + pathname` (`https://watchify-azure.vercel.app/` on the canonical alias) as its callback URL. Add additional deployment origins only when they are actually needed for testing. PKCE links must be opened in the browser that requested them, using the newest link; the app explains this when requesting an email.
+The owner requested public email signup with confirmation disabled (`mailer_autoconfirm: true`) and anonymous sign-in disabled. The last documented settings response, on 20 November 2026 at 21:56:05 UTC, was `mailer_autoconfirm: false`. This is historical evidence, not a current settings check for 7.0.0. Verify the actual setting and a returned, server-verified session on the final deployment. A signup response without a session must not open a workspace.
 
-Use the canonical alias for testing: it was opened successfully without a Vercel team login. Repository visibility does not replace authentication or database access controls.
+Password recovery needs a working email provider and the correct Auth Site URL and allowed redirects for `https://watchify-azure.vercel.app/`. The app passes its origin and pathname as the callback URL. PKCE recovery links must be opened in the same browser that requested them. Do not assume disabling signup confirmation configures recovery delivery or confirms existing accounts. See [SUPABASE_PREVIEW.md](SUPABASE_PREVIEW.md) for supported administration and verification limits.
 
-## Scope of this preview
+## 7.0.0 validation still to complete
 
-The existing catalogue and workflow examples remain available for product testing. Check the on-screen preview status for which data is saved to Supabase. A successful frontend deployment does not enable live payments, a shared production marketplace, Talia price retrieval, or ChatGPT photo analysis. Those server integrations require a separately deployed and authenticated backend with server-only credentials.
+Targeted model/snapshot and Auth runs have passed. The PDF and app-mount run passed **19 tests**, covering real PDF output, all 100 collection entries, purchase corrections, empty Analytics, index/trading navigation and cancellation of late report results or errors after a session or page change. Poppler-rendered report fixtures have been checked separately. The final complete suite, static build and integrated desktop/mobile review must still be recorded; the earlier failed Chromium launch is historical and not a visual pass.
 
-To test a listing without AI, upload your own supported watch photos, choose **Continue without AI**, then enter and confirm the watch identity, condition, polishing history and asking price. The final action is **Publish test listing**. The result is labelled **Seller-declared · Not AI verified** and is saved to that account's private workspace. Other accounts do not see these test listings. Saved manual drafts keep their valid progress, while the final publication consent is requested again after a reload.
+Before publication, validate the integrated source and build with the actual public Supabase configuration. After deployment, check:
 
-## Remaining end-to-end verification
+1. The final 7.0.0 version and exact source are served at the canonical URL.
+2. Collection totals, value ranges, charts, period changes, regional rows, market filters and owned/followed markers are consistent and labelled illustrative. Analytics costs, partial coverage, same-basket benchmark, brand drill-down, indices and sample trading context remain coherent.
+3. Add a watch works with the four required choices and optional details, purchase details can be corrected, and collection records, followed references, alerts and preferences survive saving and reload. Download a real valuation PDF and verify its dates, items, totals and optional serials.
+4. Older valid workspaces restore without deleting legacy business data or mounting commerce screens. Malformed or unsupported portfolio snapshots fail explicitly.
+5. Login, signup, sign-out, recovery, interrupted saves, conflict recovery and account separation work on the actual deployment. Verify current Auth settings and recovery delivery separately.
+6. Frontend assets render at desktop and mobile sizes; excluded server/environment routes remain unavailable, and anonymous private-table access is denied.
 
-Run the existing checks and the static build with the public Supabase configuration set. Confirm that the generated directory contains only `index.html`, `robots.txt`, `src`, and `assets`. After changing the server setting, verify direct registration with a controlled test address, a returned and verified session without an email-confirmation step, password sign-in, sign-out, persistence after reload, separation between two accounts, manual listing publication and expected image rendering. Test password recovery separately after email delivery and redirects are configured. Anonymous reads were denied in the 6.4.3 HTTP check; repeat that check after access-policy changes. The public HTTP check already confirmed `404` for `/server/start.cjs`, `/.env` and `/api/health`; repeat these boundary checks after a later deployment.
-
-Record new checks in `docs/RELEASE-6.4.3-CHECKS.json`; retain `docs/RELEASE-6.4.2-CHECKS.json` as historical evidence. Vercel READY status, build completion and the public signup form were observed for 6.4.3. Direct signup testing still depends on the pending confirmation toggle and account/workspace checks. Recovery also needs verified external email delivery and Auth URL settings. The 24-group hosted SQL test run remains incomplete because no execution result was returned; do not report it as passing.
+Record final source, build, visual, deployment and account evidence in `docs/RELEASE-7.0.0-CHECKS.json`. Do not mark publication or end-to-end verification complete before those results exist. The historical 24-group public-account SQL run returned no execution result and remains incomplete; this redesign does not turn it into a pass.
 
 ## References
 

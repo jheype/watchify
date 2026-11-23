@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const snapshot = require('../src/workspace-snapshot.js');
 const { create: createStore } = require('../src/workspace-store.js');
+const { create: createPortfolio } = require('../src/portfolio-model.js');
 require('../src/data.js');
 
 function makeState() {
@@ -235,4 +236,121 @@ test('real member and business modules survive a snapshot round-trip after simul
   assert.ok(Object.keys(restored.business.invoiceSnapshots).length > 0);
   assert.equal(restoredMember.store.conversation('DM-101').messages.at(-1).text, 'A persisted test conversation');
   for (const section of ['overview', 'orders', 'messages', 'analytics', 'accounting', 'promotion', 'profile']) assert.doesNotThrow(() => restoredMember.render(section));
+});
+
+test('the optional portfolio preserves private records and deduplicates its photos without changing legacy state', async () => {
+  const state = makeState();
+  const legacy = await snapshot.capture(state);
+  const model = createPortfolio({ state, now: () => Date.parse('2026-11-20T12:00:00.000Z') });
+  const image = 'data:image/jpeg;base64,/9j/4AECAw==';
+  model.add({ catalogueId: 'santos', year: 2018, set: 'papers', condition: 'Good', image, serial: 'PRIVATE-123', serviceHistory: 'Private service record.' });
+  model.add({ catalogueId: 'datejust', image });
+  model.toggleFollow('gmt-pepsi');
+  model.addRule({ catalogueId: 'santos', direction: 'above', targetGBP: 6000 });
+  model.markRead(model.alerts()[0].id);
+  model.preferences({ weeklyDigest: false });
+  const saved = await snapshot.capture(state);
+  assert.equal(saved.schemaVersion, 1);
+  assert.equal(Object.keys(saved.media).length, 1);
+  assert.equal(saved.state.portfolio.collection[0].image, 'watchify-media:m1');
+  assert.equal(saved.state.portfolio.collection[1].image, 'watchify-media:m1');
+  const withoutPortfolio = structuredClone(saved); delete withoutPortfolio.state.portfolio; withoutPortfolio.media = {};
+  assert.deepEqual(withoutPortfolio, legacy);
+  const restored = snapshot.restore({}, saved);
+  assert.deepEqual(restored.portfolio, state.portfolio);
+  const reloaded = createPortfolio({ state: restored });
+  assert.deepEqual(reloaded.collection(), model.collection());
+  assert.deepEqual(reloaded.rules(), model.rules());
+  assert.deepEqual(reloaded.following(), model.following());
+  assert.deepEqual(reloaded.preferences(), model.preferences());
+});
+
+test('legacy snapshots remain version one without a seeded portfolio and clear stale target portfolio records', async () => {
+  const state = makeState();
+  const saved = await snapshot.capture(state);
+  assert.equal(Object.hasOwn(saved.state, 'portfolio'), false);
+  const target = { portfolio: { privateRecordsFromPriorWorkspace: true } };
+  snapshot.restore(target, saved);
+  assert.equal(Object.hasOwn(target, 'portfolio'), false);
+  const reloaded = createPortfolio({ state: target });
+  assert.deepEqual(reloaded.collection(), []);
+  assert.deepEqual(target.watches, saved.state.watches);
+});
+
+test('malformed or future portfolio snapshots fail before restoring any account data', async () => {
+  const state = makeState();
+  const model = createPortfolio({ state }); model.add({ catalogueId: 'santos' });
+  const saved = await snapshot.capture(state);
+  const cases = [
+    { edit: value => { value.state.portfolio.version = 9; }, code: 'SNAPSHOT_VERSION' },
+    { edit: value => { value.state.portfolio.collection.push(structuredClone(value.state.portfolio.collection[0])); }, code: 'SNAPSHOT_INVALID' },
+    { edit: value => { value.state.portfolio.collection[0].catalogueId = 'unknown'; }, code: 'SNAPSHOT_INVALID' },
+    { edit: value => { value.state.portfolio.collection[0].image = 'https://example.test/watch.jpg'; }, code: 'SNAPSHOT_MEDIA' },
+    { edit: value => { value.state.portfolio.collection[0].image = 'watchify-media:m999'; }, code: 'SNAPSHOT_MEDIA' },
+    { edit: value => { value.state.portfolio.preferences.weeklyDigest = 'true'; }, code: 'SNAPSHOT_INVALID' },
+    { edit: value => { Object.defineProperty(value.state.portfolio, '__proto__', { enumerable: true, value: { polluted: true } }); }, code: 'SNAPSHOT_INVALID' }
+  ];
+  for (const fixture of cases) {
+    const invalid = structuredClone(saved); fixture.edit(invalid);
+    const target = { privateCurrentAccount: 'unchanged' };
+    assert.throws(() => snapshot.restore(target, invalid), { code: fixture.code });
+    assert.deepEqual(target, { privateCurrentAccount: 'unchanged' });
+  }
+  assert.equal({}.polluted, undefined);
+  state.portfolio.secretToken = 'must-not-be-silently-dropped';
+  await assert.rejects(snapshot.capture(state), { code: 'SNAPSHOT_INVALID' });
+});
+
+test('portfolio photos share the global cloud budget and remain available in a complete backup', async () => {
+  const state = makeState();
+  const model = createPortfolio({ state });
+  model.add({ catalogueId: 'santos', image: 'data:image/jpeg;base64,' + 'A'.repeat(4 * 1024 * 1024) });
+  model.add({ catalogueId: 'datejust', image: 'data:image/jpeg;base64,' + 'B'.repeat(4 * 1024 * 1024) });
+  await assert.rejects(snapshot.capture(state), { code: 'SNAPSHOT_TOO_LARGE' });
+  const backup = await snapshot.captureBackup(state);
+  assert.equal(backup.state.portfolio.collection.length, 2);
+  assert.equal(Object.keys(backup.media).length, 2);
+  assert.ok(Buffer.byteLength(JSON.stringify(backup)) > snapshot.MAX_BYTES);
+  assert.doesNotThrow(() => snapshot.validate(backup, { forExport: true }));
+});
+
+test('resolved portfolio media is validated before restore can modify the current workspace', async () => {
+  const state = makeState();
+  createPortfolio({ state }).add({ catalogueId: 'santos', image: 'data:image/png;base64,AAAA' });
+  const saved = await snapshot.capture(state);
+  saved.media.m1 = 'data:image/png;base64,AAA';
+  assert.throws(() => snapshot.validate(saved), { code: 'SNAPSHOT_MEDIA' });
+  const target = { currentAccount: 'preserved', portfolio: { privateCurrentData: true } };
+  const before = structuredClone(target);
+  assert.throws(() => snapshot.restore(target, saved), { code: 'SNAPSHOT_MEDIA' });
+  assert.deepEqual(target, before);
+});
+
+test('optional purchase details round-trip while older portfolio records keep those fields omitted', async () => {
+  const state = makeState();
+  const model = createPortfolio({ state });
+  model.add({ catalogueId: 'santos' });
+  model.add({ catalogueId: 'datejust', purchasePriceGBP: 9999.95, purchaseDate: '2025-03' });
+  model.add({ catalogueId: 'submariner', purchasePriceGBP: 0 });
+  model.add({ catalogueId: 'black-bay', purchasePriceGBP: null });
+  const saved = await snapshot.capture(state);
+  assert.equal(saved.schemaVersion, 1); assert.equal(saved.state.portfolio.version, 1);
+  assert.equal(Object.hasOwn(saved.state.portfolio.collection[0], 'purchasePriceGBP'), false);
+  assert.equal(Object.hasOwn(saved.state.portfolio.collection[0], 'purchaseDate'), false);
+  const restored = snapshot.restore({}, saved);
+  assert.deepEqual(restored.portfolio, state.portfolio);
+  assert.equal(restored.portfolio.collection[1].purchasePriceGBP, 9999.95);
+  assert.equal(restored.portfolio.collection[2].purchasePriceGBP, 0);
+  assert.equal(restored.portfolio.collection[3].purchasePriceGBP, null);
+});
+
+test('invalid saved purchase prices and dates fail before any workspace restoration', async () => {
+  const state = makeState(); createPortfolio({ state }).add({ catalogueId: 'santos' });
+  const saved = await snapshot.capture(state);
+  for (const fields of [{ purchasePriceGBP: '5000' }, { purchasePriceGBP: 5000.001 }, { purchasePriceGBP: -1 }, { purchaseDate: '2099-01' }, { purchaseDate: '2025-99' }, { purchaseDate: null }]) {
+    const invalid = structuredClone(saved); Object.assign(invalid.state.portfolio.collection[0], fields);
+    const target = { currentAccount: 'unchanged' };
+    assert.throws(() => snapshot.restore(target, invalid), { code: 'SNAPSHOT_INVALID' });
+    assert.deepEqual(target, { currentAccount: 'unchanged' });
+  }
 });

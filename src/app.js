@@ -44,6 +44,13 @@
     live:{loading:Boolean(liveAPI),session:null,error:'',connectionBusy:false},liveRevision:0,liveController:null,assetCleanup:null
   };
   if (preview) await preview.restoreWorkspace(state);
+  // The collector experience is the only public launch surface. Legacy records
+  // stay in the private snapshot for compatibility, without mounting commerce.
+  if (document.documentElement?.dataset?.watchifyExperience === 'portfolio') {
+    if (!globalThis.WatchifyPortfolio) throw new Error('The collection interface is unavailable');
+    await globalThis.WatchifyPortfolio.mount({state, preview});
+    return;
+  }
   const money = n => D.formatMoney(n,state.currency);
   const watchMoney = (w,n) => w.photoAssessment || w.assessmentMode==='manual' ? new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(n) : money(n);
   const marketMoney = w => w.assessmentMode==='manual' ? 'Not available' : w.photoAssessment ? (Number.isFinite(w.marketQuote?.marketPrice) ? new Intl.NumberFormat('en-GB',{style:'currency',currency:w.marketQuote.currency}).format(w.marketQuote.marketPrice) : 'Not available') : Number.isFinite(w.marketPrice)?money(w.marketPrice):'Not available';

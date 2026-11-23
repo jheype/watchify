@@ -1,0 +1,301 @@
+{
+  "version": "7.0.0",
+  "release_state": "prepublication",
+  "prepared_at_utc": "2026-11-23T04:44:30.977817+00:00",
+  "verification_status": "Integrated 477-test suite, JavaScript syntax, normal authenticated static build and git diff checks passed. Desktop browser portfolio and Analytics interactions, a real PDF download and PDF rendering passed on the isolated QA deployment. Source publication and production readback are the remaining release steps.",
+  "release_scope": {
+    "direction_source": "User-provided Valure App Direction.pdf and Valure Analytics.pdf; Valure is the former working name",
+    "product_name": "Watchify",
+    "interface": [
+      "Collection",
+      "Watch detail",
+      "Market",
+      "Analytics",
+      "Add a watch",
+      "Alerts",
+      "Account"
+    ],
+    "collector_pricing_focus": true,
+    "legacy_commerce_data_preserved": true,
+    "legacy_commerce_screens_mounted": false,
+    "portfolio_state": "Validated, versioned portfolio data inside each existing private workspace snapshot",
+    "auth_change": "Presentation and copy only; existing Supabase session and cloud-save logic retained",
+    "database_schema_or_policy_changes": false,
+    "shared_marketplace": false,
+    "live_payments_or_external_messages": false,
+    "live_pricing_backend": false,
+    "scheduled_email_digest_or_push_delivery": false,
+    "analytics": {
+      "purchase_price_GBP_and_month": "Optional, private, editable after adding a watch; missing and zero costs remain distinct",
+      "purchase_gain": "Only recorded costs; partial coverage explicit, no percentage for zero cost; fees and realised proceeds excluded",
+      "benchmark": "Collection comparison and indices share one fixed sample basket; comparison rebases to 100 per period while index retains common historical origin",
+      "brand_allocation": "Breakdown with drill-down into the corresponding owned pieces",
+      "market_indices": "Overall and per-brand sample basket, reference weights and period-return contributions",
+      "liquidity_and_supply": "Illustrative days-to-sell and listed-count histories; no observed/deduplicated real listings",
+      "market_movers": "Week, month and year; up to ten matches bounded by eight supported sample references",
+      "scheduled_refresh_or_external_feed": false
+    },
+    "valuation_pdf": {
+      "format": "Real multipage PDF generated locally in the browser",
+      "api": "WatchifyValuationReport.generate({name, generatedAt, asOf, entries, currency}) -> Promise<Uint8Array>",
+      "max_watches": 100,
+      "fields": "Every included watch, reference, year, set, condition, value/range; serial only if supplied; totals, source and download dates",
+      "disclaimer": "Illustrative estimate · not a formal appraisal",
+      "base_currency": "GBP",
+      "display_currencies": [
+        "GBP",
+        "USD",
+        "EUR"
+      ],
+      "conversion": "Fixed illustrative rates stated in the document; displayed rows and totals reconcile",
+      "runtime_network_or_upload": false,
+      "automatic_cloud_storage": false,
+      "library": "Vendored pdf-lib 1.17.1; full MIT notice in public JavaScript bundle and original license in repository",
+      "supported_text": "WinAnsi Latin text including Portuguese accents; unsupported characters produce a clear error, never silent replacement",
+      "stale_result_guard": "Account, collection, collector name, currency and page lifecycle checks; duplicate clicks blocked while preparing"
+    }
+  },
+  "sample_data": {
+    "source": "Deterministic local illustrative model",
+    "as_of": "2026-11-20",
+    "currency": "GBP base",
+    "regions": [
+      "United Kingdom",
+      "United States",
+      "Hong Kong"
+    ],
+    "regional_values_use_same_currency": true,
+    "history_periods": [
+      "1M",
+      "6M",
+      "1Y",
+      "All"
+    ],
+    "scope": [
+      "prices",
+      "value ranges",
+      "historical series",
+      "movements",
+      "regional comparisons",
+      "in-app alerts",
+      "sample weekly digest",
+      "market indices",
+      "benchmark histories",
+      "illustrative liquidity",
+      "illustrative listed counts and supply histories"
+    ],
+    "live_quote_or_appraisal_claimed": false,
+    "digest_email_sent": false,
+    "display_currencies": [
+      "GBP",
+      "USD",
+      "EUR"
+    ],
+    "currency_conversion": "Fixed illustrative exchange rates; all regional comparisons use the selected display currency"
+  },
+  "targeted_node_tests": [
+    {
+      "command": "node --test tests/portfolio-model.test.cjs tests/workspace-snapshot.test.cjs tests/analytics-model.test.cjs",
+      "tests": 51,
+      "pass": 51,
+      "fail": 0,
+      "evidence": "Implementation agent reported the combined 51-test model/snapshot/analytics run on 2026-11-23; supersedes the earlier incorrectly attributed 27 portfolio-model count",
+      "scope": "Controlled local model and codec tests, not a deployed browser or Supabase account workflow"
+    },
+    {
+      "command": "node --test tests/preview-auth.test.cjs",
+      "tests": 29,
+      "pass": 29,
+      "fail": 0,
+      "evidence": "Observed targeted run after the Auth presentation changes",
+      "scope": "Controlled Auth, account-change and cloud-save lifecycle fixtures; no real account requests"
+    },
+    {
+      "command": "node --test tests/valuation-report.test.cjs tests/portfolio-mount.test.cjs",
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "evidence": "Observed run on 2026-11-23: 10 PDF and 9 real app-mount tests",
+      "scope": "PDF signatures/structure, 100 watches, totals, Unicode/metacharacters, no runtime network; Analytics navigation, purchase form, real download, URL cleanup and deferred account/page cancellation"
+    }
+  ],
+  "final_validation": {
+    "complete_node_suite": {
+      "command": "npm test",
+      "tests": 477,
+      "pass": 477,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "observed_at_utc": "2026-11-23T04:44:30.977817+00:00"
+    },
+    "source_check": {
+      "command": "npm run check",
+      "status": "passed"
+    },
+    "static_build": {
+      "command": "npm run build with the actual Watchify public Supabase URL and publishable key",
+      "status": "passed",
+      "mode": "normal authenticated production build; no QA overrides"
+    },
+    "browser_visual_and_interaction_review": {
+      "status": "Desktop visual and interaction checks passed on isolated local-state QA deployments",
+      "analytics_deployment_id": "dpl_8pv8txgy8mJgSoTeecpm65VsttYR",
+      "analytics_deployment_url": "https://watchify-kbo18aev7-jheypes-projects.vercel.app/",
+      "capture_at_utc": "2026-11-23T04:36:12Z",
+      "capture_fingerprint_sha256": "0c9ae53d47b52b44c62fd4dd11d5fd7914905653814b58109e5b18f7d1548608",
+      "environment": "No Supabase runtime configuration or SDK; connect-src none; only disposable in-memory test collection data",
+      "checked": [
+        "Collection and watch detail visuals",
+        "Manual add without photo or AI",
+        "Autocomplete, year, set and condition",
+        "List/grid and currency selection",
+        "Market brand/query/following/regions",
+        "Alerts and preferences",
+        "Analytics empty state",
+        "Overall and brand indices with constituent breakdown",
+        "Four history periods and benchmark",
+        "Purchase-cost partial coverage, editing and recalculation",
+        "Brand allocation and owned-watch drill-down",
+        "Trading reference selection, liquidity and supply chart",
+        "Watch valuation explanation modal",
+        "Real PDF download from the UI"
+      ],
+      "analytics_fixture": {
+        "watches": 2,
+        "value_GBP": 17182,
+        "known_purchase_count_before_edit": 1,
+        "known_purchase_count_after_edit": 2,
+        "recorded_cost_GBP": 15000,
+        "gain_GBP": 2182,
+        "gain_percent": 14.55,
+        "brand_shares_percent": {
+          "Rolex": 63,
+          "Cartier": 37
+        }
+      },
+      "source_changes_after_qa_capture": [
+        "Fractional purchase costs and gains preserve cents",
+        "Directional arrows remain visible at narrow widths",
+        "Late PDF errors are cancelled after session or page changes"
+      ],
+      "after_capture_coverage": "Final integrated automated suite and source review; no claim that the QA deployment contains these later changes",
+      "mobile_visual_review": "Not performed: browser zoom did not change the available viewport. Responsive styles were implemented and reviewed; no phone-device pass claimed.",
+      "photo_upload_browser_review": "Not completed: earlier file-chooser interaction timed out. No visual upload pass claimed."
+    },
+    "local_auth_visual_attempt": "Chromium launch failed because socket() was not permitted; no screenshot or visual pass claimed",
+    "deployed_portfolio_and_auth_end_to_end": "Private production signup/sign-in and cloud save/reload were not exercised; unchanged account lifecycle is covered by controlled fixtures. Isolated UI checks do not establish a live-account end-to-end pass.",
+    "release_ready_claimed": true,
+    "pdf_layout_review": {
+      "status": "Passed local synthetic report QA",
+      "render_engine": "System Poppler /usr/bin/pdftoppm; runtime wrapper has an unrelated standard-font substitution defect",
+      "fixtures": [
+        {
+          "watches": 3,
+          "pages": 1,
+          "currency": "GBP"
+        },
+        {
+          "watches": 100,
+          "pages": 14,
+          "currency": "EUR"
+        },
+        {
+          "watches": 10,
+          "pages": 6,
+          "currency": "USD",
+          "extra": "Maximum-length name/reference/serial wrapping"
+        }
+      ],
+      "checks": "Pagination, complete references/specifications, accented name, only entered serials, totals/ranges, disclaimer on every page, last watch retained with total",
+      "limitation": "QA collection uses synthetic local-state data; no private production collection was read or exported.",
+      "live_browser_download": {
+        "status": "passed",
+        "watches": 2,
+        "pages": 1,
+        "currency": "GBP",
+        "total": 17182,
+        "sha256": "f660ef2ffc50f110d0956f9d1ec196f6b2c03c2358c59565e47e12dcdfda1a28",
+        "checks": "Downloaded using the visible Watchify button; parsed and rendered without clipping, missing references or total discrepancies"
+      }
+    },
+    "git_diff_check": "passed"
+  },
+  "source_control": {
+    "github_repository": "https://github.com/jheype/watchify",
+    "github_visibility": "public",
+    "release_7_0_0_published": false,
+    "starting_local_commit": "fcf2ce645415e96064d9ac9a0c728a7e9b8019ec",
+    "starting_remote_main_commit": "b15f807f3bba5f43da5b65c1894e7c4ef03ae0e0",
+    "starting_tree": "195e9ee9b0b4727bc5939f7eaf304552f648df22",
+    "starting_local_and_remote_trees_identical": true,
+    "publication_method": "Git Data API; verify immutable local tree, preserve remote parent and update main with expected_sha and force=false",
+    "final_source_commit": null,
+    "final_source_tree": null
+  },
+  "production_baseline": {
+    "version": "6.4.3",
+    "canonical_url": "https://watchify-azure.vercel.app/",
+    "deployment_id": "dpl_2BH1KQrpwgfcUsPHzprefchkrAXm",
+    "status": "READY",
+    "immutable_url": "https://watchify-bdhs11b68-jheypes-projects.vercel.app/",
+    "github_source_commit": "171f6b0b4a43565538476b2e874b01bbd2e76eb3",
+    "source_tree": "7173259d7519e8f6928d4f699f072d50cfa8f6d1",
+    "source_files": 142,
+    "pre_redesign_deployment_readback": "Observed READY production deployment and canonical alias on 2026-11-22",
+    "team": "jheypes-projects",
+    "team_id": "team_55DgnVCODgAtDOB5NMApMhAk",
+    "project_id": "prj_eLGA9gzAFPgKLdFeoBRZA5U9HV0h",
+    "method": "Official Vercel files deployment API",
+    "automatic_git_deployments": "Not connected in the last verified release; no new integration configured by this redesign",
+    "historical_checks_file": "docs/RELEASE-6.4.3-CHECKS.json"
+  },
+  "release_7_0_0_deployment": {
+    "status": "Not deployed",
+    "id": null,
+    "source_commit": null,
+    "source_tree": null
+  },
+  "supabase": {
+    "project": "Watchify (iqfsalmepkcjawyukiie)",
+    "organization": "TripApp (agkymdcxgzyjdppxmqoz)",
+    "trip_retained": "Separate Trip project retained as requested; Watchify has a separate project",
+    "workspace_visibility": "Private to each authenticated, non-anonymous account",
+    "auth_setting_requested": {
+      "public_email_signup_enabled": true,
+      "mailer_autoconfirm": true,
+      "anonymous_auth_enabled": false
+    },
+    "last_documented_auth_observation": {
+      "observed_at_utc": "2026-11-20T21:56:05.108Z",
+      "endpoint": "/auth/v1/settings",
+      "http_status": 200,
+      "mailer_autoconfirm": false,
+      "disable_signup": false,
+      "anonymous_users": false,
+      "email_provider_enabled": true
+    },
+    "fresh_auth_configuration_verification": "Not part of this redesign checkpoint; historical observation must not be represented as a current read",
+    "password_recovery": "Email delivery and redirect settings require live verification",
+    "existing_unconfirmed_accounts": "No account changes made by this redesign; use supported Auth administration if required",
+    "historical_public_account_sql_validation": {
+      "declared_test_groups": 24,
+      "status": "Incomplete: hosted execution returned no result before cancellation",
+      "success_claimed": false,
+      "result_file": "supabase/tests/public_account_validation_result.json"
+    }
+  },
+  "pending_before_completion": [
+    "Publish and verify the exact final GitHub tree",
+    "Deploy the validated source and verify version 7.0.0 at the canonical URL",
+    "Visually verify the deployed Auth entry screen without changing account settings"
+  ],
+  "analytics_checkpoint_at_utc": "2026-11-23T04:39:48.072831+00:00",
+  "verification_limits": [
+    "Real-account signup/sign-in, cloud save/reload and recovery email delivery were not re-run in this redesign",
+    "Supabase email-confirmation configuration was not changed or freshly verified",
+    "Phone viewport and browser photo upload are not claimed as visually verified",
+    "Sample prices, indices, liquidity, supply and fixed FX rates are not a live data feed",
+    "No scheduled market ingestion or email digest delivery is connected"
+  ]
+}

@@ -3,9 +3,10 @@
   'use strict';
   const SCHEMA_VERSION = 1;
   const domain = typeof module !== 'undefined' && module.exports ? require('./domain.js') : root.WatchifyDomain;
+  const portfolioModel = typeof module !== 'undefined' && module.exports ? require('./portfolio-model.js') : root.WatchifyPortfolioModel;
   const MAX_BYTES = 8 * 1024 * 1024;
   const MAX_BACKUP_BYTES = 32 * 1024 * 1024;
-  const STATE_KEYS = Object.freeze(['watches', 'saved', 'currency', 'activity', 'activitySequence', 'sell', 'sellDraft', 'listingSequence', 'member', 'workspace', 'business', 'syncAt', 'syncCount']);
+  const STATE_KEYS = Object.freeze(['watches', 'saved', 'currency', 'activity', 'activitySequence', 'sell', 'sellDraft', 'listingSequence', 'member', 'workspace', 'business', 'syncAt', 'syncCount', 'portfolio']);
   const FORBIDDEN = /password|secret|token|session|credential|csrf|api[_-]?key|security/i;
   const RUNTIME = new Set(['file', 'assetId', 'assetIds', 'busy', 'analysisError', 'quoteError', 'quoteErrorCode']);
   const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -17,6 +18,16 @@
   const fail = (code, message) => { throw error(code, message); };
   const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value) && [Object.prototype, null].includes(Object.getPrototypeOf(value));
   const byteLength = value => new TextEncoder().encode(typeof value === 'string' ? value : JSON.stringify(value)).length;
+
+  function checkPortfolio(value, mediaReferences = false) {
+    if (!portfolioModel?.validate) fail('SNAPSHOT_VERSION', 'This saved portfolio requires the updated Watchify app. It has not been overwritten.');
+    try { portfolioModel.validate(value, { mediaReferences }); }
+    catch (failure) {
+      if (failure?.code === 'PORTFOLIO_VERSION') fail('SNAPSHOT_VERSION', 'This saved portfolio uses an unsupported version. It has not been overwritten.');
+      if (failure?.code === 'PORTFOLIO_IMAGE') fail('SNAPSHOT_MEDIA', 'A portfolio photo uses an unsupported address or format.');
+      fail('SNAPSHOT_INVALID', 'The saved portfolio contains an invalid or unsupported record.');
+    }
+  }
 
   // Make an immutable-in-time copy before the first await. Files are supplied separately.
   function copy(value, { strip = false, depth = 0, ancestors = new Set(), budget = { nodes: 0 } } = {}) {
@@ -149,6 +160,7 @@
         for (const field of ['name', 'email', 'company', 'address', 'city', 'postalCode', 'country', 'taxId', 'method']) requireString(billing[field], 300);
       }
     }
+    if (state.portfolio !== undefined) checkPortfolio(state.portfolio, true);
   }
 
   function visitMedia(value, callback, key = '') {
@@ -170,6 +182,7 @@
 
   async function capture(state, { fetchBlob = root.fetch?.bind(root), forExport = false } = {}) {
     const maxBytes = forExport ? MAX_BACKUP_BYTES : MAX_BYTES;
+    if (state.portfolio !== undefined) checkPortfolio(state.portfolio);
     const files = new Map((state.sell?.photos || []).filter(photo => typeof photo.url === 'string' && photo.file).map(photo => [photo.url, photo.file]));
     const selected = {};
     for (const key of STATE_KEYS) if (state[key] !== undefined) selected[key] = state[key];
@@ -224,6 +237,13 @@
       if (!match || !Object.hasOwn(result.media, match[1])) fail('SNAPSHOT_MEDIA', 'A saved photo is missing or uses an unsupported address.');
       return value;
     });
+    if (result.state.portfolio !== undefined) {
+      const expandedPortfolio = visitMedia(copy(result.state.portfolio), value => {
+        const match = MEDIA_REF.exec(value);
+        return match ? result.media[match[1]] : value;
+      });
+      checkPortfolio(expandedPortfolio);
+    }
     return result;
   }
 
@@ -265,6 +285,8 @@
         data.sell.conditionConfirmed = false;
       }
     }
+    // Older workspaces have no portfolio. Never retain a previous in-memory one.
+    if (!Object.hasOwn(data, 'portfolio')) delete state.portfolio;
     Object.assign(state, data);
     return state;
   }

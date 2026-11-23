@@ -113,13 +113,59 @@ test('rendering never generates unsupported fit classifications or an exact-size
   assert.match(svg, /data-wrist-cm="16.5"/);
   assert.match(svg, /aria-labelledby="wf-svg-title wf-svg-desc"/);
 });
-test('script and stylesheet are registered and the listing button has an actual click handler', () => {
+test('portfolio entry point uses collector styles while preserving dormant wrist-fit contracts', () => {
   const html = read('index.html'), app = read('src/app.js');
-  assert.ok(html.indexOf('src/wrist-fit.js') < html.indexOf('src/app.js'));
-  assert.match(html, /href="src\/wrist-fit.css"/);
+  const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*>/g)].map(match => match[1]);
+  const styles = [...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="([^"]+)"[^>]*>/g)].map(match => match[1]);
+  assert.match(html, /data-watchify-experience="portfolio"/);
+  assert.ok(styles.includes('src/portfolio.css'));
+  assert.ok(styles.includes('src/preview-auth.css'));
+  assert.ok(!styles.includes('src/wrist-fit.css'), 'the collection interface does not mount the legacy fit guide');
+  for (const file of ['src/wrist-fit.js', 'src/portfolio-model.js', 'src/portfolio-views.js', 'src/portfolio.js']) {
+    assert.ok(scripts.includes(file), file + ' remains registered');
+    assert.ok(scripts.indexOf(file) < scripts.indexOf('src/app.js'), file + ' loads before bootstrap');
+  }
+  // These contracts remain available to the retained legacy modules and tests.
   assert.match(app, /WatchifyWristFit\?\.renderTrigger\(w\)/);
   assert.match(app, /case 'wrist-fit':wristFit\?\.open\(id\)/);
   assert.match(app, /WatchifyWristFit\?\.create\(\{byId,openModal\}\)/);
+  assert.doesNotMatch(read('src/portfolio.js') + read('src/portfolio-views.js'), /WatchifyWristFit|data-action="wrist-fit"/);
+});
+test('portfolio bootstrap restores the authenticated workspace and returns before legacy handlers mount', async () => {
+  const html = read('index.html');
+  const experience = html.match(/data-watchify-experience="([^"]+)"/)?.[1];
+  const calls = [], legacyCalls = [];
+  let restoredState;
+  const preview = {
+    async authenticate() { calls.push('authenticate'); return true; },
+    async restoreWorkspace(state) { calls.push('restore'); restoredState = state; state.member = { preserved: true }; },
+    fatal() { calls.push('fatal'); }
+  };
+  const legacy = name => () => { legacyCalls.push(name); throw new Error('Legacy UI must not mount in portfolio mode'); };
+  const sandbox = {
+    WATCHIFY_CONFIG: { mode: 'zeit-preview' },
+    WatchifyPreview: preview,
+    WatchifyDomain: {},
+    WatchifyData: { watches: [{ id: 'preserved-reference', photos: [] }] },
+    WatchifyPortfolio: { async mount({ state, preview: activePreview }) {
+      calls.push('portfolio');
+      assert.equal(state, restoredState, 'the portfolio receives the restored workspace, not a replacement seed');
+      assert.equal(activePreview, preview);
+      assert.equal(state.member.preserved, true);
+    } },
+    WatchifyMember: { create: legacy('member') },
+    WatchifyWristFit: { create: legacy('wrist-fit') },
+    document: {
+      documentElement: { dataset: { watchifyExperience: experience } },
+      querySelector: legacy('legacy DOM query'),
+      querySelectorAll: legacy('legacy DOM queries'),
+      addEventListener: legacy('legacy document handler')
+    },
+    window: { addEventListener: legacy('legacy window handler') }
+  };
+  await vm.runInNewContext(read('src/app.js'), sandbox);
+  assert.deepEqual(calls, ['authenticate', 'restore', 'portfolio']);
+  assert.deepEqual(legacyCalls, []);
 });
 test('new guide does not use external APIs, camera, storage or unsafe executable HTML', () => {
   const source = read('src/wrist-fit.js');

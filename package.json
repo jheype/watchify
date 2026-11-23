@@ -1,8 +1,8 @@
 {
   "name": "watchify",
-  "version": "6.4.3",
+  "version": "7.0.0",
   "private": true,
-  "description": "Watchify test preview with public signup, private workspaces and optional AI photo assessment.",
+  "description": "Watchify collector portfolio preview with illustrative pricing, private collections, market context and value alerts.",
   "scripts": {
     "dev": "node server/start.cjs",
     "start": "node server/start.cjs",
